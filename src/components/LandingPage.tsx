@@ -1,21 +1,35 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Sparkles, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
+import { Language } from '../types';
+import { UI_TRANSLATIONS } from '../constants';
+import Tooltip from './Tooltip';
 
 interface LandingPageProps {
   onStart: (activity: string) => void;
+  lang: Language;
 }
 
-const SUGGESTIONS = [
-  'Machine maintenance',
-  'Belt replacement',
-  'Electrical work',
-  'Deep cleaning',
-  'Blade replacement'
-];
+const SUGGESTIONS = {
+  en: [
+    'Machine Maintenance',
+    'Belt Replacement',
+    'Electrical Work',
+    'Deep Cleaning',
+    'Blade Change'
+  ],
+  hi: [
+    'मशीन रखरखाव',
+    'बेल्ट बदलना',
+    'विद्युत कार्य',
+    'गहरी सफाई',
+    'ब्लेड बदलना'
+  ]
+};
 
-export default function LandingPage({ onStart }: LandingPageProps) {
+export default function LandingPage({ onStart, lang }: LandingPageProps) {
   const [activity, setActivity] = useState('');
+  const t = UI_TRANSLATIONS[lang];
 
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
@@ -28,9 +42,9 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           <div className="w-10 h-10 bg-[#0f172a] rounded-xl flex items-center justify-center">
             <Shield size={22} className="text-white" />
           </div>
-          <div>
-            <h1 className="text-xl font-extrabold text-[#0f172a] tracking-tight m-0 uppercase">LOTO DECISION TOOL</h1>
-            <p className="text-xs text-slate-400 font-bold tracking-widest uppercase m-0 opacity-60">Enterprise Safety Systems</p>
+          <div className="text-left">
+            <h1 className="text-xl font-extrabold text-[#0f172a] tracking-tight m-0 uppercase">{t.appTitle}</h1>
+            <p className="text-xs text-slate-400 font-bold tracking-widest uppercase m-0 opacity-60">{t.aboutApp}</p>
           </div>
         </div>
       </motion.div>
@@ -41,30 +55,34 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         transition={{ delay: 0.2 }}
         className="w-full max-w-2xl glass-card p-10 md:p-14"
       >
-        <div className="mb-8">
-          <span className="badge bg-[#dcfce7] text-[#166534] mb-4 inline-block">Safety First</span>
+        <div className="mb-8 text-left">
+          <span className="badge bg-[#dcfce7] text-[#166534] mb-4 inline-block">
+            {lang === 'en' ? 'Safety First' : 'सुरक्षा पहले'}
+          </span>
           <h2 className="text-3xl md:text-4xl font-extrabold text-[#0f172a] leading-tight mb-4 tracking-tight">
-            Start a new safety assessment.
+            {lang === 'en' ? 'Start a New Safety Assessment.' : 'एक नया सुरक्षा मूल्यांकन शुरू करें।'}
           </h2>
           <p className="text-lg text-slate-500 leading-relaxed mb-10">
-            Define the task you are evaluating to determine the appropriate safety lockout mode.
+            {lang === 'en' 
+              ? 'Define the activity you are assessing to determine the appropriate safety lockout mode.' 
+              : 'उचित सुरक्षा लॉकआउट मोड निर्धारित करने के लिए उस कार्य को परिभाषित करें जिसका आप मूल्यांकन कर रहे हैं।'}
           </p>
           
           <label htmlFor="activity" className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
-            What activity will you be performing?
+            {lang === 'en' ? 'What activity will you perform?' : 'आप कौन सी गतिविधि करेंगे?'}
           </label>
           <textarea
             id="activity"
             value={activity}
             onChange={(e) => setActivity(e.target.value)}
-            placeholder="e.g. Replacing conveyor belt, cleaning machine parts..."
+            placeholder={t.activityPlaceholder}
             className="w-full px-5 py-4 rounded-xl bg-white border border-slate-200 focus:border-[#0f172a] focus:ring-4 focus:ring-slate-900/5 transition-all outline-none text-lg min-h-[120px] resize-none shadow-sm"
           />
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 items-center justify-between pt-4 border-t border-slate-100">
           <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-            {SUGGESTIONS.map((suggestion) => (
+            {SUGGESTIONS[lang].map((suggestion) => (
               <button
                 key={suggestion}
                 onClick={() => setActivity(suggestion)}
@@ -75,13 +93,15 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             ))}
           </div>
           
-          <button
-            onClick={() => activity.trim() && onStart(activity)}
-            disabled={!activity.trim()}
-            className="btn-primary flex items-center gap-2 group w-full md:w-auto justify-center"
-          >
-            Start Assessment
-          </button>
+          <Tooltip content={t.startAssessment}>
+            <button
+              onClick={() => activity.trim() && onStart(activity)}
+              disabled={!activity.trim()}
+              className="btn-primary flex items-center gap-2 group w-full md:w-auto justify-center"
+            >
+              {t.startAssessment}
+            </button>
+          </Tooltip>
         </div>
       </motion.div>
     </div>

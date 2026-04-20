@@ -1,40 +1,42 @@
 import { motion } from 'framer-motion';
-import { 
-  Shield, 
-  Lock, 
-  User, 
-  Hand, 
-  AlertTriangle,
-  ChevronRight,
-  ClipboardList
-} from 'lucide-react';
+import { ChevronRight, Shield, Hand, User, Lock, AlertTriangle } from 'lucide-react';
 import { MODES } from '../constants';
-import { ModeId } from '../types';
+import { ModeId, Language } from '../types';
 
 const ICON_MAP: Record<string, any> = {
   Shield,
-  Lock,
-  User,
   Hand,
+  User,
+  Lock,
   AlertTriangle,
 };
 
-export default function ModeReference() {
+interface ModeReferenceProps {
+  lang: Language;
+}
+
+export default function ModeReference({ lang }: ModeReferenceProps) {
   return (
-    <div className="py-8 px-4">
-      <div className="text-center mb-16">
-        <h1 className="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">
-          LOTO <span className="text-blue-600">Operations Reference</span>
+    <div className="py-8 px-4 text-left">
+      <div className="mb-12">
+        <h1 className="text-4xl font-extrabold text-[#0f172a] mb-2 tracking-tight">
+          {lang === 'en' ? (
+            <>LOTO <span className="text-blue-600">Operation Reference</span></>
+          ) : (
+            <>लोटो <span className="text-blue-600">संचालन संदर्भ</span></>
+          )}
         </h1>
-        <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-          A comprehensive guide to the five operational modes of safety assessment. Understand each mode's requirements and application scenarios.
+        <p className="text-lg text-slate-600 max-w-2xl">
+          {lang === 'en' 
+            ? 'Detailed breakdown of all safety lockout modes and their specific requirements.' 
+            : 'सभी सुरक्षा लॉकआउट मोड और उनकी विशिष्ट आवश्यकताओं का विस्तृत विवरण।'}
         </p>
       </div>
-
+      
       <div className="grid grid-cols-1 gap-6">
         {([4, 3, 2, 1, 0] as ModeId[]).map((id, index) => {
           const mode = MODES[id];
-          const ModeIcon = ICON_MAP[mode.icon];
+          const modeT = mode.translations[lang];
           
           return (
             <motion.div
@@ -42,23 +44,40 @@ export default function ModeReference() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white/40 backdrop-blur-sm rounded-[24px] overflow-hidden border border-white/60 p-6 flex items-center justify-between group hover:bg-white/60 transition-all cursor-pointer shadow-sm"
+              className="bg-white/40 backdrop-blur-sm rounded-[24px] overflow-hidden border border-white/60 p-6 flex flex-col md:flex-row md:items-center justify-between group hover:bg-white/60 transition-all cursor-pointer shadow-sm gap-6"
             >
               <div className="flex items-center gap-4">
                 <div 
-                  className="w-3 h-3 rounded-full shrink-0" 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg shrink-0" 
                   style={{ backgroundColor: mode.color }}
-                />
+                >
+                  <Hand size={24} />
+                </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-extrabold text-[#0f172a] uppercase tracking-tight">{mode.name}</span>
-                  <span className="text-xs text-slate-400 font-semibold">{mode.title}</span>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-sm font-extrabold text-[#0f172a] uppercase tracking-tight">{mode.name}</span>
+                    <div className="flex gap-0.5">
+                      {[...Array(5)].map((_, i) => (
+                        <div 
+                          key={i} 
+                          className={`w-1.5 h-1.5 rounded-full ${i <= (id) ? '' : 'opacity-20'}`}
+                          style={{ backgroundColor: i <= (id) ? mode.color : '#cbd5e1' }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <span className="text-lg text-slate-800 font-bold tracking-tight">{modeT.title}</span>
                 </div>
               </div>
               
-              <div className="flex items-center gap-3">
+              <div className="flex-1 max-w-xl text-sm text-slate-500 line-clamp-2">
+                {modeT.description}
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
                 <div className="flex gap-1">
-                  {mode.examples.slice(0, 1).map((ex, i) => (
-                    <span key={i} className="px-2.5 py-1 bg-[#0f172a]/5 text-[#0f172a] rounded-lg text-[10px] font-bold uppercase tracking-tight">
+                  {modeT.examples.slice(0, 1).map((ex, i) => (
+                    <span key={i} className="px-3 py-1.5 bg-[#0f172a]/5 text-[#0f172a] rounded-lg text-[10px] font-bold uppercase tracking-tight whitespace-nowrap">
                       {ex}
                     </span>
                   ))}

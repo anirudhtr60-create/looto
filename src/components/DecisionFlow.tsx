@@ -1,8 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Check, 
-  X, 
   ChevronLeft, 
+  RotateCcw,
   Zap, 
   ClipboardCheck, 
   Activity, 
@@ -11,14 +10,16 @@ import {
   MoveRight,
   HelpCircle
 } from 'lucide-react';
-import { AssessmentState } from '../types';
-import { QUESTIONS } from '../constants';
+import { AssessmentState, Language } from '../types';
+import { QUESTIONS, UI_TRANSLATIONS } from '../constants';
+import Tooltip from './Tooltip';
 
 interface DecisionFlowProps {
   assessment: AssessmentState;
   onAnswer: (answer: boolean) => void;
   onBack: () => void;
   onRestart: () => void;
+  lang: Language;
 }
 
 const ICON_MAP: Record<string, any> = {
@@ -30,41 +31,48 @@ const ICON_MAP: Record<string, any> = {
   MoveRight,
 };
 
-export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart }: DecisionFlowProps) {
+export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart, lang }: DecisionFlowProps) {
   const currentQuestion = QUESTIONS[assessment.currentStepId];
-  const progress = (assessment.path.length / 6) * 100; // Estimated total steps
+  const qT = currentQuestion.translations[lang];
+  const t = UI_TRANSLATIONS[lang];
   const QuestionIcon = ICON_MAP[currentQuestion.icon] || HelpCircle;
+  const totalSteps = 6;
+  const currentStepNum = assessment.path.length + 1;
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
+    <div className="max-w-3xl mx-auto py-8 px-4 text-left">
       {/* Header Info */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex flex-col">
-          <span className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-1">Assessment In Progress</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-[#0f172a] mb-1">
+            {lang === 'en' ? 'Assessment in Progress' : 'मूल्यांकन प्रगति पर है'}
+          </span>
           <h2 className="text-sm font-medium text-slate-500 flex items-center gap-2">
-            Activity: <span className="text-slate-900 font-semibold">{assessment.activity}</span>
+            {lang === 'en' ? 'Activity' : 'गतिविधि'}: <span className="text-slate-900 font-semibold">{assessment.activity}</span>
           </h2>
         </div>
-        <button 
-          onClick={onRestart}
-          className="text-xs font-semibold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-wider"
-        >
-          Reset
-        </button>
+        <Tooltip content={t.reset}>
+          <button 
+            onClick={onRestart}
+            className="text-xs font-semibold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-wider flex items-center gap-2"
+          >
+            <RotateCcw size={14} />
+            {t.reset}
+          </button>
+        </Tooltip>
       </div>
 
-      {/* Progress Bar */}
       <div className="mb-12">
         <div className="flex justify-between items-center mb-3">
           <div className="flex gap-1.5 align-center">
-            {[...Array(6)].map((_, i) => (
+            {[...Array(totalSteps)].map((_, i) => (
               <div 
                 key={i} 
-                className={`w-10 h-1 bg-[#0f172a] rounded-full transition-all duration-300 ${i < assessment.path.length + 1 ? 'opacity-100' : 'opacity-10'}`}
+                className={`w-10 h-1.5 bg-[#0f172a] rounded-full transition-all duration-300 ${i < currentStepNum ? 'opacity-100' : 'opacity-10'}`}
               />
             ))}
           </div>
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Step {assessment.path.length + 1} of ~6</span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{t.step} {currentStepNum} {t.of} {totalSteps}</span>
         </div>
       </div>
 
@@ -78,17 +86,24 @@ export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart }
           transition={{ duration: 0.3 }}
           className="glass-card p-10 md:p-14 mb-8"
         >
-          <div className="flex flex-col gap-4">
-            <span className="badge w-fit bg-[#dcfce7] text-[#166534] mb-2">Assessment</span>
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-[#0f172a] shadow-sm">
+                <QuestionIcon size={24} />
+              </div>
+              <span className="badge bg-[#dcfce7] text-[#166534]">
+                {lang === 'en' ? 'Assessment' : 'मूल्यांकन'}
+              </span>
+            </div>
             
             <div className="flex flex-col">
-              <h3 className="text-3xl md:text-4xl font-extrabold text-[#0f172a] leading-tight mb-4 tracking-tight">
-                {currentQuestion.text}
+              <h3 className="text-3xl md:text-4xl font-extrabold text-[#0f172a] leading-tight mb-4 tracking-tight min-h-[80px]">
+                {qT.text}
               </h3>
               
-              {currentQuestion.helperText && (
-                <p className="text-lg text-slate-500 leading-relaxed max-w-2xl">
-                  {currentQuestion.helperText}
+              {qT.helperText && (
+                <p className="text-lg text-slate-500 font-medium leading-relaxed max-w-2xl">
+                  {qT.helperText}
                 </p>
               )}
             </div>
@@ -100,30 +115,38 @@ export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart }
       <div className="grid grid-cols-2 gap-5">
         <button
           onClick={() => onAnswer(true)}
-          className="btn-choice btn-yes flex flex-col items-center justify-center gap-3 p-8 rounded-2xl"
+          className="btn-yes flex flex-col items-center justify-center gap-3 p-8 rounded-2xl h-40 group"
+          aria-label={t.yes}
         >
-          <div className="text-3xl mb-1">✅</div>
-          <span className="text-xl font-bold">Yes, it's acceptable</span>
+          <span className="text-2xl font-black">{t.yes}</span>
+          <span className="text-xs font-bold opacity-60 uppercase tracking-widest group-hover:opacity-100 transition-opacity">
+            {lang === 'en' ? 'Select Yes' : 'हाँ चुनें'}
+          </span>
         </button>
 
         <button
           onClick={() => onAnswer(false)}
-          className="btn-choice btn-no flex flex-col items-center justify-center gap-3 p-8 rounded-2xl"
+          className="btn-no flex flex-col items-center justify-center gap-3 p-8 rounded-2xl h-40 group"
+          aria-label={t.no}
         >
-          <div className="text-3xl mb-1">❌</div>
-          <span className="text-xl font-bold">No, risk is too high</span>
+          <span className="text-2xl font-black">{t.no}</span>
+          <span className="text-xs font-bold opacity-60 uppercase tracking-widest group-hover:opacity-100 transition-opacity">
+            {lang === 'en' ? 'Select No' : 'नहीं चुनें'}
+          </span>
         </button>
       </div>
 
-      {/* Back Button */}
       <div className="mt-12 flex justify-center">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-slate-400 hover:text-slate-600 underline-offset-4 hover:underline font-medium transition-all"
-        >
-          <ChevronLeft size={18} />
-          Previous Question
-        </button>
+        <Tooltip content={t.back}>
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-slate-400 hover:text-slate-600 font-bold text-xs uppercase tracking-widest transition-all"
+            aria-label={t.back}
+          >
+            <ChevronLeft size={18} />
+            {t.back}
+          </button>
+        </Tooltip>
       </div>
     </div>
   );

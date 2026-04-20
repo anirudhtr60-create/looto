@@ -1,25 +1,40 @@
 import { LucideIcon } from 'lucide-react';
 
 export type ModeId = 0 | 1 | 2 | 3 | 4;
+export type Language = 'en' | 'hi';
 
-export interface Mode {
-  id: ModeId;
-  name: string;
+export interface Translation {
   title: string;
   description: string;
   requirements: string[];
   examples: string[];
+}
+
+export interface Mode {
+  id: ModeId;
+  name: string;
   color: string;
   bgColor: string;
   borderColor: string;
   icon: string;
+  translations: Record<Language, Translation>;
 }
 
 export interface Question {
   id: string;
-  text: string;
-  helperText?: string;
+  translations: Record<Language, {
+    text: string;
+    helperText?: string;
+  }>;
   icon: string;
+}
+
+export interface AssessmentRecord {
+  id: string;
+  activity: string;
+  timestamp: number;
+  result: ModeId;
+  language: Language;
 }
 
 export type StepAction = {
