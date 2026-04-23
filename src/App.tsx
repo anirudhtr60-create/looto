@@ -32,6 +32,7 @@ export default function App() {
   const [history, setHistory] = useState<AssessmentRecord[]>([]);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [lang, setLang] = useState<Language>('en');
+  const [isLoading, setIsLoading] = useState(false);
 
   const isDark = false;
 
@@ -137,6 +138,15 @@ export default function App() {
     safeStorage.remove('loto_history');
   };
 
+  const handleTabChange = (view: View) => {
+    setIsLoading(true);
+    setActiveTab(view);
+    // Simulate data fetching delay
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+  };
+
   const t = UI_TRANSLATIONS[lang];
 
   if (project === 'portal') {
@@ -187,7 +197,7 @@ export default function App() {
                   id="tab-decision"
                   aria-controls="panel-decision"
                   aria-selected={activeTab === 'decision'}
-                  onClick={() => { setActiveTab('decision'); setAssessment(null); }}
+                  onClick={() => { handleTabChange('decision'); setAssessment(null); }}
                   className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 ${
                     activeTab === 'decision' 
                     ? 'bg-white text-[#0f172a] shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-black/5' 
@@ -205,7 +215,7 @@ export default function App() {
                   id="tab-reference"
                   aria-controls="panel-reference"
                   aria-selected={activeTab === 'reference'}
-                  onClick={() => setActiveTab('reference')}
+                  onClick={() => handleTabChange('reference')}
                   className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 ${
                     activeTab === 'reference' 
                     ? 'bg-white text-[#0f172a] shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-black/5' 
@@ -223,7 +233,7 @@ export default function App() {
                   id="tab-history"
                   aria-controls="panel-history"
                   aria-selected={activeTab === 'history'}
-                  onClick={() => setActiveTab('history')}
+                  onClick={() => handleTabChange('history')}
                   className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 ${
                     activeTab === 'history' 
                     ? 'bg-white text-[#0f172a] shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-black/5' 
@@ -313,7 +323,7 @@ export default function App() {
               exit={{ opacity: 0, y: -10 }}
               className="w-full"
             >
-              <ModeReference lang={lang} onBack={() => setProject('portal')} />
+              <ModeReference isLoading={isLoading} lang={lang} onBack={() => setProject('portal')} />
             </motion.div>
           ) : (
             <motion.div
@@ -327,6 +337,7 @@ export default function App() {
               className="w-full"
             >
               <HistoryView 
+                isLoading={isLoading}
                 history={history} 
                 lang={lang} 
                 onClear={handleClearHistory} 

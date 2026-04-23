@@ -1,10 +1,19 @@
 import React, { useState, useRef, useEffect, MouseEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, ArrowLeft, Save, Printer, CheckCircle2, AlertCircle, Info, Check, Download, FileText, ChevronDown, Trash2, FolderOpen, X } from 'lucide-react';
+import { Shield, ArrowLeft, Save, Printer, CheckCircle2, AlertCircle, Info, Check, Download, FileText, ChevronDown, Trash2, FolderOpen, X, Clock } from 'lucide-react';
 import { Language } from '../types';
 import { safeStorage } from '../lib/storage';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import pdfMake from "pdfmake/build/pdfmake";
+import * as pdfFonts from "pdfmake/build/vfs_fonts";
+
+// Initialize pdfMake fonts with robust check for different build environments
+if (pdfFonts && (pdfFonts as any).pdfMake) {
+  (pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
+} else if (pdfFonts) {
+  (pdfMake as any).vfs = (pdfFonts as any).vfs || (pdfFonts as any).default?.vfs;
+}
 
 interface ContractorEvaluationProps {
   lang: Language;
@@ -59,8 +68,13 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
   const [showSaveMessage, setShowSaveMessage] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'timestamp' | 'company' | 'score'>('timestamp');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [savedAssessments, setSavedAssessments] = useState<any[]>([]);
   const printRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadSavedAssessments();
@@ -72,9 +86,26 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
     const assessments = evaluationKeys.map(k => {
       const data = safeStorage.get<any>(k, null);
       return data ? { key: k, ...data } : null;
-    }).filter(a => a !== null).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    }).filter(a => a !== null);
     setSavedAssessments(assessments);
   };
+
+  const filteredAndSortedAssessments = savedAssessments
+    .filter(a => 
+      a.formData.contractCompany.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.formData.overallFeedback.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === 'timestamp') {
+        comparison = (a.timestamp || 0) - (b.timestamp || 0);
+      } else if (sortBy === 'company') {
+        comparison = a.formData.contractCompany.localeCompare(b.formData.contractCompany);
+      } else if (sortBy === 'score') {
+        comparison = (a.overallScore || 0) - (b.overallScore || 0);
+      }
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
 
   const handleSave = () => {
     const evaluationData = {
@@ -121,63 +152,373 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
   const handleDownload = async (format: 'pdf' | 'doc') => {
     setShowDownloadMenu(false);
     
-    const element = printRef.current;
-    if (!element) return;
-
     if (format === 'pdf') {
       try {
-        // Force rigid dimensions for high-quality capture
-        const originalStyle = element.getAttribute('style') || '';
-        element.setAttribute('style', `
-          width: 800px !important;
-          height: auto !important;
-          position: fixed !important;
-          left: 0 !important;
-          top: 0 !important;
-          z-index: 999999 !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-          background: white !important;
-          padding: 40px !important;
-          box-sizing: border-box !important;
-        `);
+        const docDefinition: any = {
+          pageSize: 'A4',
+          pageMargins: [30, 40, 30, 40],
+          defaultStyle: {
+            font: 'Roboto',
+            fontSize: 10
+          },
+          content: [
+            {
+              columns: [
+                { text: 'REVISION NO. 01', bold: true, fontSize: 10, width: '25%' },
+                {
+                  stack: [
+                    { text: 'BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA', alignment: 'center', bold: true, fontSize: 11 },
+                    { text: 'CONTRACTOR PERFORMANCE EVALUATION REPORT FORM', alignment: 'center', bold: true, fontSize: 10, margin: [0, 2] },
+                    { text: 'BAIL-S-110-FRM-01-00-00-04', alignment: 'center', bold: true, fontSize: 10 }
+                  ],
+                  width: '50%'
+                },
+                { text: '', width: '25%' }
+              ],
+              margin: [0, 0, 0, 15]
+            },
+            {
+              table: {
+                widths: [20, '*'],
+                body: [
+                  [{ text: 'A', bold: true, fillColor: '#f1f5f9' }, { text: 'CONTRACTOR DETAILS', bold: true, fillColor: '#f1f5f9' }],
+                  ['1', {
+                    columns: [
+                      { text: 'Contract Company/Business Name:', bold: true, width: '40%' },
+                      { text: formData.contractCompany || '-', bold: true }
+                    ]
+                  }],
+                  ['2', {
+                    columns: [
+                      { text: 'Brief Description of work undertaken:', bold: true, width: '40%' },
+                      { text: formData.workDescription || '-' }
+                    ]
+                  }],
+                  ['3', {
+                    columns: [
+                      { text: 'Project Completion', bold: true, width: '40%' },
+                      { text: 'SCHEDULED:', margin: [0, 0, 5, 0], bold: true },
+                      { text: formData.projectCompletion.scheduled || '-', width: '15%' },
+                      { text: 'ACTUAL:', margin: [10, 0, 5, 0], bold: true },
+                      { text: formData.projectCompletion.actual || '-', width: '15%' }
+                    ]
+                  }]
+                ]
+              },
+              margin: [0, 0, 0, 10]
+            },
+            {
+              table: {
+                widths: [20, '*'],
+                body: [
+                  [{ text: 'B', bold: true, fillColor: '#f1f5f9' }, { text: 'CONTRACTOR SAFETY MANAGEMENT SYSTEM', bold: true, fillColor: '#f1f5f9' }]
+                ]
+              },
+              margin: [0, 0, 0, 0]
+            },
+            {
+              text: 'SCORING CRITERIA: Very Good:- 5, Good:- 4, Average:- 3, Need Improvement:- 2, Inadequate:- 1',
+              fontSize: 9,
+              italic: true,
+              margin: [0, 5, 0, 5]
+            },
+            {
+              table: {
+                headerRows: 1,
+                widths: [25, '*', 60, 40, 80],
+                body: [
+                  [
+                    { text: 'S.NO.', bold: true, alignment: 'center', fillColor: '#f8fafc' },
+                    { text: 'PERFORMANCE PARAMETERS', bold: true, alignment: 'center', fillColor: '#f8fafc' },
+                    { text: 'EVALUATED? (YES/NO)', bold: true, alignment: 'center', fillColor: '#f8fafc' },
+                    { text: 'RATING', bold: true, alignment: 'center', fillColor: '#f8fafc' },
+                    { text: 'COMMENTS', bold: true, alignment: 'center', fillColor: '#f8fafc' }
+                  ],
+                  ...safetyMetrics.map(m => [
+                    { text: m.id.toString(), alignment: 'center' },
+                    m.parameter,
+                    { text: m.evaluated || '-', alignment: 'center' },
+                    { text: (m.rating || '-').toString(), alignment: 'center', bold: true },
+                    m.comments || '-'
+                  ])
+                ]
+              },
+              margin: [0, 0, 0, 10]
+            },
+            {
+              table: {
+                widths: [20, '*'],
+                body: [
+                  [{ text: 'C', bold: true, fillColor: '#f1f5f9' }, { text: 'CONTRACTOR COMPETENCE & TRAINING', bold: true, fillColor: '#f1f5f9' }]
+                ]
+              },
+              margin: [0, 0, 0, 5]
+            },
+            {
+              table: {
+                headerRows: 1,
+                widths: [25, '*', 60, 40, 80],
+                body: [
+                  [
+                    { text: 'S.NO.', bold: true, alignment: 'center', fillColor: '#f8fafc' },
+                    { text: 'PERFORMANCE PARAMETERS', bold: true, alignment: 'center', fillColor: '#f8fafc' },
+                    { text: 'EVALUATED? (YES/NO)', bold: true, alignment: 'center', fillColor: '#f8fafc' },
+                    { text: 'RATING', bold: true, alignment: 'center', fillColor: '#f8fafc' },
+                    { text: 'COMMENTS', bold: true, alignment: 'center', fillColor: '#f8fafc' }
+                  ],
+                  ...competenceMetrics.map(m => [
+                    { text: m.id.toString(), alignment: 'center' },
+                    m.parameter,
+                    { text: m.evaluated || '-', alignment: 'center' },
+                    { text: (m.rating || '-').toString(), alignment: 'center', bold: true },
+                    m.comments || '-'
+                  ])
+                ]
+              },
+              margin: [0, 0, 0, 10]
+            },
+            {
+              table: {
+                widths: ['*', 100],
+                body: [
+                  [
+                    { text: 'OVERALL RATING (Inadequate: 0-60, Deficient: 61-75, Good: 76-90, Superior: 91-100)', bold: true, alignment: 'left', fillColor: '#f8fafc' },
+                    { text: `${overallScore}% — ${ratingInfo.label}`, bold: true, alignment: 'center', color: '#1e3a8a', fontSize: 12 }
+                  ]
+                ]
+              },
+              margin: [0, 0, 0, 10]
+            },
+            {
+              table: {
+                widths: ['*'],
+                body: [
+                  [{ text: 'Overall Feedback:', bold: true, border: [true, true, true, false] }],
+                  [{ text: formData.overallFeedback || 'No feedback provided.', margin: [10, 5, 0, 15], border: [true, false, true, true] }]
+                ]
+              },
+              margin: [0, 0, 0, 20]
+            },
+            {
+              table: {
+                widths: ['*', '*'],
+                body: [
+                  [{ text: 'EVALUATED BY:', bold: true, fillColor: '#f1f5f9', colSpan: 2 }, {}],
+                  [
+                    {
+                      stack: [
+                        { text: 'Safety Manager (Signature & Title)', bold: true, fontSize: 9 },
+                        { text: formData.safetyManager || '____________________', margin: [0, 15, 0, 0], bold: true, fontSize: 11 }
+                      ],
+                      padding: [5, 10, 5, 10]
+                    },
+                    {
+                      stack: [
+                        { text: 'Department In charge (Signature & Title)', bold: true, fontSize: 9 },
+                        { text: formData.deptInCharge || '____________________', margin: [0, 15, 0, 0], bold: true, fontSize: 11 }
+                      ],
+                      padding: [5, 10, 5, 10]
+                    }
+                  ]
+                ]
+              },
+              margin: [0, 0, 0, 30]
+            },
+            {
+              canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.5 }]
+            },
+            {
+              columns: [
+                {
+                  stack: [
+                    'PREPARED BY: SAFETY MANAGER',
+                    'APPROVED BY: VP TECHNICAL',
+                    'REVISION DATE: 01.08.2024'
+                  ],
+                  bold: true,
+                  fontSize: 9,
+                  margin: [0, 10, 0, 0]
+                },
+                {
+                  text: '“CLASSIFIED – CONFIDENTIAL FOR INTERNAL USE ONLY”',
+                  alignment: 'right',
+                  bold: true,
+                  italic: true,
+                  fontSize: 10,
+                  margin: [0, 20, 0, 0]
+                }
+              ]
+            }
+          ],
+          styles: {
+            header: {
+              fontSize: 18,
+              bold: true
+            }
+          }
+        };
 
-        const canvas = await html2canvas(element, {
-          scale: 3, // Higher scale for extreme text clarity
-          useCORS: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          windowWidth: 800
-        });
-
-        element.setAttribute('style', originalStyle);
-
-        if (!canvas) throw new Error('Canvas generation failed');
-
-        const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-        pdf.save(`BAIL_S_110_FRM_01_00_00_04_${formData.contractCompany.replace(/\s+/g, '_') || 'Report'}.pdf`);
+        const fileName = `BAIL_S_110_FRM_01_00_00_04_${formData.contractCompany.replace(/\s+/g, '_') || 'Report'}.pdf`;
+        pdfMake.createPdf(docDefinition).download(fileName);
         
       } catch (error) {
-        console.error('PDF Generation failed:', error);
+        console.error('PDF Generation failed with pdfMake:', error);
       }
     } else {
-      // Basic Word (HTML) export
-      const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' "+
-            "xmlns:w='urn:schemas-microsoft-com:office:word' "+
-            "xmlns='http://www.w3.org/TR/REC-html40'>"+
-            "<head><meta charset='utf-8'><title>Contractor Evaluation</title></head><body>";
+      // Improved Word export with MSO metadata for better compatibility
+      const style = `
+        <style>
+          @page { margin: 1in; }
+          body { font-family: 'Arial', sans-serif; font-size: 10pt; line-height: 1.2; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; table-layout: fixed; }
+          th, td { border: 2pt solid black; padding: 6pt; font-size: 10pt; text-align: left; word-wrap: break-word; }
+          .header-table td { border: none; }
+          .section-header { background-color: #f1f5f9; font-weight: bold; }
+          .sub-header { background-color: #f8fafc; font-weight: bold; }
+          .title { text-align: center; font-weight: bold; }
+          .footer { margin-top: 50px; font-size: 9pt; font-weight: bold; border-top: 2pt solid black; padding-top: 10px; }
+          .score-box { font-size: 14pt; color: #1e3a8a; text-align: center; font-weight: bold; }
+        </style>
+      `;
+      
+      const header = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>Contractor Evaluation Record</title>${style}</head><body>
+      `;
+      
+      const content = `
+        <table class="header-table">
+          <tr>
+            <td width="20%"><b>REVISION NO. 01</b></td>
+            <td width="60%" class="title">
+              <div style="font-size: 12pt;">BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA</div>
+              <div>CONTRACTOR PERFORMANCE EVALUATION REPORT FORM</div>
+              <div>BAIL-S-110-FRM-01-00-00-04</div>
+            </td>
+            <td width="20%"></td>
+          </tr>
+        </table>
+
+        <table>
+          <tr class="section-header">
+            <td width="30">A</td>
+            <td>CONTRACTOR DETAILS</td>
+          </tr>
+          <tr>
+            <td width="30">1</td>
+            <td><b>Contract Company/Business Name:</b> ${formData.contractCompany || '-'}</td>
+          </tr>
+          <tr>
+            <td width="30">2</td>
+            <td><b>Brief Description of work undertaken:</b><br/>${formData.workDescription || '-'}</td>
+          </tr>
+          <tr>
+            <td width="30">3</td>
+            <td>
+              <table style="border: none; margin: 0;">
+                <tr style="border: none;">
+                  <td style="border: none;"><b>Project Completion</b></td>
+                  <td style="border: none;"><b>SCHEDULED:</b> ${formData.projectCompletion.scheduled || '-'}</td>
+                  <td style="border: none;"><b>ACTUAL:</b> ${formData.projectCompletion.actual || '-'}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <table>
+          <tr class="section-header">
+            <td width="30">B</td>
+            <td>CONTRACTOR SAFETY MANAGEMENT SYSTEM</td>
+          </tr>
+          <tr>
+            <td colspan="2"><i>SCORING CRITERIA: Very Good:- 5, Good:- 4, Average:- 3, Need Improvement:- 2, Inadequate:- 1</i></td>
+          </tr>
+        </table>
+
+        <table>
+          <tr class="sub-header">
+            <th width="40" style="text-align: center">S.NO</th>
+            <th>PERFORMANCE PARAMETERS</th>
+            <th width="80" style="text-align: center">EVALUATED?</th>
+            <th width="60" style="text-align: center">RATING</th>
+            <th width="100">COMMENTS</th>
+          </tr>
+          ${safetyMetrics.map(m => `
+            <tr>
+              <td style="text-align: center">${m.id}</td>
+              <td>${m.parameter}</td>
+              <td style="text-align: center">${m.evaluated || '-'}</td>
+              <td style="text-align: center"><b>${m.rating || '-'}</b></td>
+              <td>${m.comments || '-'}</td>
+            </tr>
+          `).join('')}
+        </table>
+
+        <table>
+          <tr class="section-header">
+            <td width="30">C</td>
+            <td>CONTRACTOR COMPETENCE & TRAINING</td>
+          </tr>
+        </table>
+
+        <table>
+          <tr class="sub-header">
+            <th width="40" style="text-align: center">S.NO</th>
+            <th>PERFORMANCE PARAMETERS</th>
+            <th width="80" style="text-align: center">EVALUATED?</th>
+            <th width="60" style="text-align: center">RATING</th>
+            <th width="100">COMMENTS</th>
+          </tr>
+          ${competenceMetrics.map(m => `
+            <tr>
+              <td style="text-align: center">${m.id}</td>
+              <td>${m.parameter}</td>
+              <td style="text-align: center">${m.evaluated || '-'}</td>
+              <td style="text-align: center"><b>${m.rating || '-'}</b></td>
+              <td>${m.comments || '-'}</td>
+            </tr>
+          `).join('')}
+        </table>
+
+        <table style="margin-top: 10px;">
+          <tr>
+            <td class="sub-header" width="70%">OVERALL RATING (Inadequate: 0-60, Deficient: 61-75, Good: 76-90, Superior: 91-100)</td>
+            <td class="score-box" width="30%">${overallScore}% — ${ratingInfo.label}</td>
+          </tr>
+          <tr>
+            <td colspan="2"><b>Overall Feedback:</b><br/><br/>${formData.overallFeedback || 'No feedback provided.'}</td>
+          </tr>
+        </table>
+
+        <table>
+          <tr class="section-header">
+            <td colspan="2">EVALUATED BY:</td>
+          </tr>
+          <tr>
+            <td height="80"><b>Safety Manager (Signature & Title)</b><br/><br/>${formData.safetyManager || '____________________'}</td>
+            <td height="80"><b>Department In charge (Signature & Title)</b><br/><br/>${formData.deptInCharge || '____________________'}</td>
+          </tr>
+        </table>
+
+        <div class="footer">
+          <table class="header-table" style="margin: 0;">
+            <tr>
+              <td>
+                PREPARED BY: SAFETY MANAGER<br/>
+                APPROVED BY: VP TECHNICAL<br/>
+                REVISION DATE: 01.08.2024
+              </td>
+              <td style="text-align: right; vertical-align: bottom;">
+                <i>“CLASSIFIED – CONFIDENTIAL FOR INTERNAL USE ONLY”</i>
+              </td>
+            </tr>
+          </table>
+        </div>
+      `;
+      
       const footer = "</body></html>";
-      const sourceHTML = header + element.innerHTML + footer;
-      
-      const blob = new Blob(['\ufeff', sourceHTML], {
-        type: 'application/msword'
-      });
-      
+      const blob = new Blob(['\ufeff', header + content + footer], { type: 'application/msword' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -278,8 +619,15 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-3 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[60]"
+                    className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[60]"
                   >
+                    <button
+                      onClick={() => setShowPreviewModal(true)}
+                      className="w-full flex items-center gap-3 px-6 py-4 text-xs font-black text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors border-b border-slate-50"
+                    >
+                      <FolderOpen size={16} className="text-blue-500" />
+                      Preview Report
+                    </button>
                     <button
                       onClick={() => handleDownload('pdf')}
                       className="w-full flex items-center gap-3 px-6 py-4 text-xs font-black text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors border-b border-slate-50"
@@ -579,9 +927,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
       </main>
 
       {/* Official Print Layout */}
-      {/* ... keeping previous logic ... */}
-
-      {/* History Modal */}
+      {/* ... keeping previous logic ... */}      {/* History Modal */}
       <AnimatePresence>
         {showHistoryModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/40 backdrop-blur-md">
@@ -589,39 +935,73 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl border border-white overflow-hidden flex flex-col max-h-[80vh]"
+              className="bg-white w-full max-w-3xl rounded-[2.5rem] shadow-2xl border border-white overflow-hidden flex flex-col max-h-[85vh]"
             >
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-blue-100 text-blue-600 rounded-2xl">
-                    <FolderOpen size={24} />
+              <div className="p-8 border-b border-slate-100 bg-slate-50/50">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-100 text-blue-600 rounded-2xl">
+                      <FolderOpen size={24} />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">Saved Assessments</h2>
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">{savedAssessments.length} Reports Stored</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">Saved Assessments</h2>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Select an evaluation to load</p>
+                  <button 
+                    onClick={() => setShowHistoryModal(false)}
+                    className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1 relative">
+                    <input 
+                      type="text" 
+                      placeholder="Search assessments..."
+                      className="w-full h-12 bg-white border border-slate-200 rounded-xl px-12 text-sm font-bold focus:border-blue-500 outline-none transition-all shadow-sm"
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                    />
+                    <Info size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                  </div>
+                  <div className="flex gap-2">
+                    <select 
+                      className="h-12 bg-white border border-slate-200 rounded-xl px-4 text-xs font-black uppercase tracking-widest text-slate-600 outline-none focus:border-blue-500 shadow-sm"
+                      value={sortBy}
+                      onChange={e => setSortBy(e.target.value as any)}
+                    >
+                      <option value="timestamp">Sort by Date</option>
+                      <option value="company">Sort by Name</option>
+                      <option value="score">Sort by Score</option>
+                    </select>
+                    <button 
+                      onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                      className="px-4 h-12 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
+                    >
+                      <ChevronDown className={`transition-transform ${sortOrder === 'asc' ? 'rotate-180' : ''}`} />
+                    </button>
                   </div>
                 </div>
-                <button 
-                  onClick={() => setShowHistoryModal(false)}
-                  className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm"
-                >
-                  <X size={20} />
-                </button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {savedAssessments.length === 0 ? (
+                {filteredAndSortedAssessments.length === 0 ? (
                   <div className="py-20 text-center space-y-4">
                     <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto">
                       <FolderOpen size={32} className="text-slate-200" />
                     </div>
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No saved assessments found</p>
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                      {searchQuery ? 'No matching assessments found' : 'No saved assessments found'}
+                    </p>
                   </div>
                 ) : (
-                  savedAssessments.map(assessment => (
+                  filteredAndSortedAssessments.map(assessment => (
                     <div 
                       key={assessment.key}
-                      className="group p-5 bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 rounded-[2rem] transition-all flex items-center justify-between gap-4"
+                      className="group p-5 bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 rounded-[2rem] transition-all flex items-center justify-between gap-4 shadow-sm hover:shadow-md"
                     >
                       <div className="flex-1 cursor-pointer" onClick={() => loadAssessment(assessment)}>
                         <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight group-hover:text-blue-600 transition-colors">
@@ -629,11 +1009,11 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                         </h4>
                         <div className="flex items-center gap-3 mt-2">
                           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                            <Info size={12} />
+                            <Clock size={12} />
                             {new Date(assessment.timestamp).toLocaleDateString()}
                           </span>
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${getRatingLabel(assessment.overallScore).color}`}>
-                            Score: {assessment.overallScore}%
+                          <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-white border border-slate-100 ${getRatingLabel(assessment.overallScore).color}`}>
+                            Score: {assessment.overallScore}% — {getRatingLabel(assessment.overallScore).label}
                           </span>
                         </div>
                       </div>
@@ -662,7 +1042,114 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
         )}
       </AnimatePresence>
 
-      {/* Official Print Layout (Perfect Industrial Format matching BAIL-S-110-FRM) */}
+      {/* Report Preview Modal */}
+      <AnimatePresence>
+        {showPreviewModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-md p-4 md:p-10">
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              className="bg-slate-100 w-full max-w-5xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col h-full border border-white/20"
+            >
+              <div className="p-8 bg-white border-b border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-green-100 text-green-600 rounded-2xl">
+                    <Printer size={24} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Report Preview</h2>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Verify content before exporting</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleDownload('pdf')}
+                    className="flex items-center gap-2 px-6 py-3 bg-[#0f172a] text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all"
+                  >
+                    <Download size={18} />
+                    Download PDF
+                  </button>
+                  <button
+                    onClick={() => setShowPreviewModal(false)}
+                    className="p-3 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 md:p-12 flex justify-center bg-slate-200/50">
+                <div className="bg-white shadow-[0_20px_50px_rgba(0,0,0,0.15)] origin-top scale-[0.6] md:scale-[0.85] lg:scale-100 mb-20">
+                   {/* Create a static clone for preview to avoid ref issues during download */}
+                   <div className="print-container" style={{ padding: '20mm' }}>
+                      {/* Reuse the logic from print layout but here it's visible */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8pt' }}>
+                        <div className="bold-900" style={{ width: '25%', fontSize: '10.5pt' }}>REVISION NO. 01</div>
+                        <div style={{ width: '50%' }}>
+                          <div className="header-title uppercase">BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA</div>
+                          <div className="header-subtitle uppercase">CONTRACTOR PERFORMANCE EVALUATION REPORT FORM</div>
+                          <div className="header-code">BAIL-S-110-FRM-01-00-00-04</div>
+                        </div>
+                        <div style={{ width: '20%' }}></div>
+                      </div>
+
+                      <div className="grid-table">
+                        <div className="grid-row section-header">
+                          <div className="grid-cell col-index">A</div>
+                          <div className="grid-cell flex-1 bold-900">CONTRACTOR DETAILS</div>
+                        </div>
+                        <div className="grid-row">
+                          <div className="grid-cell col-index">1</div>
+                          <div className="grid-cell flex-none w-[35%] bold-900 uppercase">Contract Company/Business Name:</div>
+                          <div className="grid-cell flex-1 flex-grow bold-900 text-[11pt] uppercase" style={{ color: '#1e3a8a' }}>{formData.contractCompany}</div>
+                        </div>
+                        <div className="grid-row">
+                          <div className="grid-cell col-index">2</div>
+                          <div className="grid-cell flex-none w-[35%] bold-900 uppercase leading-[1.1]">Brief Description of work undertaken:</div>
+                          <div className="grid-cell flex-1 flex-grow py-1.0 leading-snug">{formData.workDescription}</div>
+                        </div>
+                      </div>
+
+                      <div className="grid-table mt-4">
+                         <div className="grid-row section-header">
+                            <div className="grid-cell col-index">B</div>
+                            <div className="grid-cell flex-1 font-black">SAFETY MANAGEMENT SYSTEM</div>
+                         </div>
+                         <div className="grid-row py-1 italic text-[9.5pt] font-black" style={{ backgroundColor: '#fff', borderBottom: '1.5pt solid #000' }}>
+                           <div className="w-full px-4" style={{ color: '#1e40af' }}>SCORING CRITERIA: Very Good:- 5, Good:- 4, Average:- 3, Need Improvement:- 2, Inadequate:- 1</div>
+                         </div>
+                         <div className="grid-row sub-header bold-900 text-[9.5pt]">
+                            <div className="grid-cell col-index center-text">S.NO.</div>
+                            <div className="grid-cell col-param uppercase center-text">PERFORMANCE PARAMETERS</div>
+                            <div className="grid-cell col-eval uppercase leading-[1.1] center-text">EVALUATED? (Y/N)</div>
+                            <div className="grid-cell col-rating uppercase center-text">RATING</div>
+                         </div>
+                         {safetyMetrics.slice(0, 5).map(row => (
+                            <div className="grid-row" key={row.id}>
+                              <div className="grid-cell col-index center-text font-black">{row.id}</div>
+                              <div className="grid-cell col-param font-medium" style={{ fontSize: '10pt' }}>{row.parameter}</div>
+                              <div className="grid-cell col-eval center-text font-black">{row.evaluated || '-'}</div>
+                              <div className="grid-cell col-rating center-text bold-900">{row.rating || '-'}</div>
+                            </div>
+                         ))}
+                         <div className="grid-row p-4 justify-center bg-slate-50 italic text-[10px] text-slate-400">... Preview only showing partial list ...</div>
+                      </div>
+
+                      <div className="mt-10 p-6 border-2 border-black">
+                        <div className="flex justify-between items-center mb-4">
+                           <span className="font-black uppercase tracking-widest text-xs">Total Compliance Score</span>
+                           <span className="text-2xl font-black">{overallScore}%</span>
+                        </div>
+                        <p className="text-xs font-bold leading-relaxed">{formData.overallFeedback}</p>
+                      </div>
+                   </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       <div 
         ref={printRef}
         className="print-root"
@@ -674,232 +1161,229 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
           top: '0', 
           zIndex: -1,
           backgroundColor: 'white',
-          padding: '12mm'
+          padding: '10mm'
         }}
       >
         <style dangerouslySetInnerHTML={{ __html: `
           @page { size: A4; margin: 0; }
           
           .print-container { 
-            display: block !important; 
+            display: flex !important;
+            flex-direction: column !important;
             width: 100% !important; 
-            margin: 0 auto !important;
-            padding: 0 !important;
-            font-family: "Arial", "Helvetica", sans-serif !important;
+            font-family: "Arial", sans-serif !important;
             background-color: #ffffff !important;
             color: #000000 !important;
-            font-size: 7.5pt !important;
-            line-height: 1.2 !important;
+            font-size: 10pt !important;
+            line-height: 1.1 !important;
           }
-          .print-container table { 
-            width: 100%; 
-            border-collapse: separate; 
-            border-spacing: 0;
-            margin-bottom: 2pt; 
-            table-layout: fixed; 
-            border: 1pt solid #000000; 
-            background-color: #ffffff !important; 
+
+          .grid-table { 
+            border: 2pt solid #000 !important;
+            margin-bottom: 6pt !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
           }
-          .print-container th, .print-container td { 
-            border-right: 1pt solid #000000;
-            border-bottom: 1pt solid #000000;
-            padding: 4pt 5pt; 
-            word-break: break-word; 
-            vertical-align: top;
-            color: #000000 !important; 
+
+          .grid-row { 
+            display: flex !important;
+            flex-direction: row !important;
+            border-bottom: 2pt solid #000 !important;
+            width: 100% !important;
+            min-height: 18pt !important;
+            box-sizing: border-box !important;
           }
-          .print-container tr th:last-child, .print-container tr td:last-child {
-            border-right: none;
+
+          .grid-row:last-child {
+            border-bottom: none !important;
           }
-          .print-container tr:last-child th, .print-container tr:last-child td {
-            border-bottom: none;
+
+          .grid-cell { 
+            border-right: 2pt solid #000 !important;
+            padding: 4pt 6pt !important; 
+            display: flex !important;
+            align-items: center !important;
+            word-break: break-word !important; 
+            box-sizing: border-box !important;
+            font-size: 10pt !important;
           }
-          .print-container .section-header { 
+
+          .grid-cell:last-child {
+            border-right: none !important;
+          }
+
+          .section-header { 
             background-color: #f1f5f9 !important; 
-            font-weight: bold; 
-            text-align: left;
-            -webkit-print-color-adjust: exact;
+            font-weight: 900 !important; 
+            text-transform: uppercase !important; 
+            min-height: 20pt !important;
+            font-size: 10pt !important;
           }
-          .print-container .sub-header { 
+          .sub-header { 
             background-color: #f8fafc !important; 
-            font-weight: bold;
-            text-align: center;
-            -webkit-print-color-adjust: exact;
+            font-weight: bold !important; 
+            justify-content: center !important; 
+            text-align: center !important; 
+            font-size: 10pt !important; 
           }
-          .print-container h1 { font-size: 11pt !important; margin: 0; line-height: 1.1; }
-          .print-container h2 { font-size: 9pt !important; margin: 1pt 0; line-height: 1.1; }
+          
+          .col-index { flex: 0 0 5% !important; max-width: 5% !important; justify-content: center !important; font-weight: 900 !important; }
+          .col-param { flex: 0 0 55% !important; max-width: 55% !important; }
+          .col-eval  { flex: 0 0 13% !important; max-width: 13% !important; justify-content: center !important; text-align: center !important; }
+          .col-rating { flex: 0 0 9% !important; max-width: 9% !important; justify-content: center !important; font-weight: 900 !important; }
+          .col-comments { flex: 0 0 18% !important; max-width: 18% !important; font-style: italic !important; color: #1e293b !important; }
+          
+          .header-title { font-size: 12pt !important; font-weight: 900 !important; text-align: center !important; width: 100% !important; line-height: 1.1 !important; }
+          .header-subtitle { font-size: 10pt !important; font-weight: 900 !important; margin: 2pt 0 !important; text-align: center !important; width: 100% !important; }
+          .header-code { font-size: 10pt !important; font-weight: 900 !important; text-align: center !important; width: 100% !important; }
+          
+          .center-text { justify-content: center !important; text-align: center !important; }
+          .bold-900 { font-weight: 900 !important; }
           
           @media print {
             body > div#root > *:not(.print-root) { display: none !important; }
             #root { padding: 0 !important; margin: 0 !important; background: white !important; }
-            .print-root { position: relative !important; left: 0 !important; top: 0 !important; padding: 12mm !important; opacity: 1 !important; }
+            .print-root { position: relative !important; left: 0 !important; top: 0 !important; padding: 12mm 10mm !important; opacity: 1 !important; }
           }
         `}} />
-               <div className="print-container">
-          {/* Header Table for absolute alignment stability */}
-          <table style={{ border: 'none', marginBottom: '8pt' }}>
-            <tbody>
-              <tr style={{ border: 'none' }}>
-                <td style={{ border: 'none', width: '20%', verticalAlign: 'top', padding: 0 }} className="font-bold">REVISION NO. 01</td>
-                <td style={{ border: 'none', width: '60%', textAlign: 'center', padding: 0 }}>
-                  <h1 className="font-bold uppercase tracking-tight">BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA</h1>
-                  <h2 className="font-bold uppercase" style={{ margin: '2pt 0' }}>CONTRACTOR PERFORMANCE EVALUATION REPORT FORM</h2>
-                  <div className="font-bold" style={{ fontSize: '8pt' }}>BAIL-S-110-FRM-01-00-00-04</div>
-                </td>
-                <td style={{ border: 'none', width: '20%', padding: 0 }}></td>
-              </tr>
-            </tbody>
-          </table>
+        
+        <div className="print-container">
+          {/* Top Header Section */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8pt' }}>
+            <div className="bold-900" style={{ width: '25%', fontSize: '10.5pt' }}>REVISION NO. 01</div>
+            <div style={{ width: '50%' }}>
+              <div className="header-title uppercase">BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA</div>
+              <div className="header-subtitle uppercase">CONTRACTOR PERFORMANCE EVALUATION REPORT FORM</div>
+              <div className="header-code">BAIL-S-110-FRM-01-00-00-04</div>
+            </div>
+            <div style={{ width: '20%' }}></div>
+          </div>
 
-          {/* Section A */}
-          <table className="mb-2">
-            <thead>
-              <tr className="section-header">
-                <th style={{ width: '5%', textAlign: 'center' }}>A</th>
-                <th colSpan={5} className="font-bold py-1">CONTRACTOR DETAILS</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="text-center font-bold">1</td>
-                <td className="w-[30%] font-bold">Contract Company/Business Name:</td>
-                <td colSpan={4} className="uppercase font-bold text-blue-900 px-3">{formData.contractCompany}</td>
-              </tr>
-              <tr>
-                <td className="text-center font-bold">2</td>
-                <td className="font-bold">Brief Description of Contract work to be undertaken:</td>
-                <td colSpan={4} className="align-top py-2 px-3">{formData.workDescription}</td>
-              </tr>
-              <tr>
-                <td className="text-center font-bold">3</td>
-                <td className="font-bold">Project Completion</td>
-                <td className="sub-header w-[12%]">SCHEDULED</td>
-                <td className="text-center font-bold w-[13%]">{formData.projectCompletion.scheduled}</td>
-                <td className="sub-header w-[12%]">ACTUAL</td>
-                <td className="text-center font-bold w-[13%]">{formData.projectCompletion.actual}</td>
-              </tr>
-            </tbody>
-          </table>
+          {/* Section A: Contractor Details */}
+          <div className="grid-table">
+            <div className="grid-row section-header">
+              <div className="grid-cell col-index">A</div>
+              <div className="grid-cell flex-1 bold-900">CONTRACTOR DETAILS</div>
+            </div>
+            <div className="grid-row">
+              <div className="grid-cell col-index">1</div>
+              <div className="grid-cell flex-none w-[35%] bold-900 uppercase">Contract Company/Business Name:</div>
+              <div className="grid-cell flex-1 flex-grow bold-900 uppercase" style={{ color: '#1e3a8a' }}>{formData.contractCompany}</div>
+            </div>
+            <div className="grid-row">
+              <div className="grid-cell col-index">2</div>
+              <div className="grid-cell flex-none w-[35%] bold-900 uppercase leading-[1.1]">Brief Description of work undertaken:</div>
+              <div className="grid-cell flex-1 flex-grow py-1.0 leading-snug">{formData.workDescription}</div>
+            </div>
+            <div className="grid-row">
+              <div className="grid-cell col-index">3</div>
+              <div className="grid-cell flex-none w-[35%] bold-900 uppercase">Project Completion</div>
+              <div className="grid-cell sub-header w-[12%] center-text" style={{ flex: '0 0 12%' }}>SCHEDULED</div>
+              <div className="grid-cell w-[13%] center-text bold-900" style={{ flex: '0 0 13%' }}>{formData.projectCompletion.scheduled}</div>
+              <div className="grid-cell sub-header w-[12%] center-text" style={{ flex: '0 0 12%' }}>ACTUAL</div>
+              <div className="grid-cell w-[13%] center-text bold-900" style={{ flex: '0 0 13%' }}>{formData.projectCompletion.actual}</div>
+            </div>
+          </div>
 
-          {/* Section B */}
-          <table className="mb-2">
-            <thead>
-              <tr className="section-header">
-                <th style={{ width: '5%', textAlign: 'center' }}>B</th>
-                <th colSpan={4} className="font-bold py-1 uppercase">Contractor Safety Management System</th>
-              </tr>
-              <tr className="italic text-[6.5pt]">
-                <th colSpan={5} className="text-left font-normal py-1 px-4" style={{ color: '#1e40af', borderTop: 'none' }}>
-                  SCORING CRITERIA: Very Good:- 5, Good:- 4, Average:- 3, Need Improvement:- 2
-                </th>
-              </tr>
-              <tr className="sub-header text-[7pt]">
-                <td style={{ width: '5%' }}>S.NO.</td>
-                <td style={{ width: '55%' }} className="uppercase">PERFORMANCE PARAMETERS</td>
-                <td style={{ width: '13%' }}>EVALUATED?<br/>(YES/NO)</td>
-                <td style={{ width: '9%' }} className="uppercase">RATING</td>
-                <td style={{ width: '18%' }} className="uppercase">COMMENTS</td>
-              </tr>
-            </thead>
-            <tbody>
-              {safetyMetrics.map(row => (
-                <tr key={row.id}>
-                  <td className="text-center font-bold px-1">{row.id}</td>
-                  <td className="px-3" style={{ fontSize: '7pt', lineHeight: '1.1' }}>{row.parameter}</td>
-                  <td className="text-center font-bold">{row.evaluated}</td>
-                  <td className="text-center font-bold">{row.rating}</td>
-                  <td className="italic text-slate-500" style={{ fontSize: '6.5pt', lineHeight: '1.1' }}>{row.comments}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/* Section B: Safety Management System */}
+          <div className="grid-table">
+            <div className="grid-row section-header">
+              <div className="grid-cell col-index">B</div>
+              <div className="grid-cell flex-1 font-black">CONTRACTOR SAFETY MANAGEMENT SYSTEM</div>
+            </div>
+            <div className="grid-row py-1 italic font-black" style={{ backgroundColor: '#fff', borderBottom: '2pt solid #000' }}>
+              <div className="w-full px-4" style={{ color: '#1e40af' }}>SCORING CRITERIA: Very Good:- 5, Good:- 4, Average:- 3, Need Improvement:- 2, Inadequate:- 1</div>
+            </div>
+            <div className="grid-row sub-header bold-900">
+              <div className="grid-cell col-index center-text">S.NO.</div>
+              <div className="grid-cell col-param uppercase center-text">PERFORMANCE PARAMETERS</div>
+              <div className="grid-cell col-eval uppercase leading-[1.1] center-text">EVALUATED?<br/>(YES/NO)</div>
+              <div className="grid-cell col-rating uppercase center-text">RATING</div>
+              <div className="grid-cell col-comments uppercase center-text">COMMENTS</div>
+            </div>
+            {safetyMetrics.map(row => (
+              <div className="grid-row" key={row.id}>
+                <div className="grid-cell col-index center-text font-black">{row.id}</div>
+                <div className="grid-cell col-param leading-[1.1] py-1.5 px-4 font-medium">{row.parameter}</div>
+                <div className="grid-cell col-eval px-0 bold-900 center-text">{row.evaluated}</div>
+                <div className="grid-cell col-rating center-text bold-900">{row.rating}</div>
+                <div className="grid-cell col-comments leading-[1.1] py-1.5 px-2">{row.comments}</div>
+              </div>
+            ))}
+          </div>
 
-          {/* Section C */}
-          <table className="mb-2">
-            <thead>
-              <tr className="section-header">
-                <th style={{ width: '5%', textAlign: 'center' }}>C</th>
-                <th colSpan={4} className="font-bold py-1 uppercase">Contractor Competence & Training</th>
-              </tr>
-              <tr className="sub-header text-[7pt]">
-                <td style={{ width: '5%' }}>S.NO.</td>
-                <td style={{ width: '55%' }} className="uppercase">PERFORMANCE PARAMETERS</td>
-                <td style={{ width: '13%' }}>EVALUATED?<br/>(YES/NO)</td>
-                <td style={{ width: '9%' }} className="uppercase">RATING</td>
-                <td style={{ width: '18%' }} className="uppercase">COMMENTS</td>
-              </tr>
-            </thead>
-            <tbody>
-              {competenceMetrics.map(row => (
-                <tr key={row.id}>
-                  <td className="text-center font-bold px-1">{row.id}</td>
-                  <td className="px-3" style={{ fontSize: '7pt', lineHeight: '1.1' }}>{row.parameter}</td>
-                  <td className="text-center font-bold">{row.evaluated}</td>
-                  <td className="text-center font-bold">{row.rating}</td>
-                  <td className="italic text-slate-500" style={{ fontSize: '6.5pt', lineHeight: '1.1' }}>{row.comments}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/* Section C: Competence & Training */}
+          <div className="grid-table">
+            <div className="grid-row section-header">
+              <div className="grid-cell col-index">C</div>
+              <div className="grid-cell flex-1 bold-900">CONTRACTOR COMPETENCE & TRAINING</div>
+            </div>
+            <div className="grid-row sub-header bold-900">
+              <div className="grid-cell col-index center-text">S.NO.</div>
+              <div className="grid-cell col-param uppercase center-text">PERFORMANCE PARAMETERS</div>
+              <div className="grid-cell col-eval uppercase leading-[1.1] center-text">EVALUATED?<br/>(YES/NO)</div>
+              <div className="grid-cell col-rating uppercase center-text">RATING</div>
+              <div className="grid-cell col-comments uppercase center-text">COMMENTS</div>
+            </div>
+            {competenceMetrics.map(row => (
+              <div className="grid-row" key={row.id}>
+                <div className="grid-cell col-index center-text font-black">{row.id}</div>
+                <div className="grid-cell col-param leading-[1.1] py-1.5 px-4 font-medium">{row.parameter}</div>
+                <div className="grid-cell col-eval px-0 bold-900 center-text">{row.evaluated}</div>
+                <div className="grid-cell col-rating center-text bold-900">{row.rating}</div>
+                <div className="grid-cell col-comments leading-[1.1] py-1.5 px-2">{row.comments}</div>
+              </div>
+            ))}
+          </div>
 
-          {/* Overall Rating */}
-          <table className="mb-2">
-            <tbody>
-              <tr className="sub-header">
-                <td style={{ width: '75%' }} className="font-bold uppercase text-[7pt] py-2 text-left px-4">
-                  OVERALL RATING (Inadequate: 0-60, Deficient: 61-75, Good: 76-90, Superior: 91-100)
-                </td>
-                <td className="text-center text-[10pt] font-black" style={{ width: '25%' }}>
-                  {overallScore}% — {ratingInfo.label}
-                </td>
-              </tr>
-              <tr>
-                <td colSpan={2} className="h-14 align-top p-2" style={{ borderTop: 'none' }}>
-                  <div className="font-bold mb-1 uppercase text-[6.5pt]">Overall Feedback:</div>
-                  <div className="text-[7.5pt] leading-tight">{formData.overallFeedback}</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          {/* Rating Summary Area */}
+          <div className="grid-table">
+            <div className="grid-row sub-header">
+              <div className="grid-cell flex-[0.7] !flex-[0 _0_70%] justify-start px-6 bold-900 uppercase">
+                OVERALL RATING (Inadequate: 0-60, Deficient: 61-75, Good: 76-90, Superior: 91-100)
+              </div>
+              <div className="grid-cell flex-[0.3] !flex-[0_0_30%] center-text bold-900 text-[12pt]" style={{ borderLeft: '2pt solid #000' }}>
+                {overallScore}% — {ratingInfo.label}
+              </div>
+            </div>
+            <div className="grid-row min-h-[45pt] flex-col items-start p-3" style={{ borderTop: 'none' }}>
+              <div className="bold-900 mb-1.5 uppercase text-[10pt]">Overall Feedback:</div>
+              <div className="text-[10.5pt] leading-normal w-full px-2 font-medium">{formData.overallFeedback}</div>
+            </div>
+          </div>
 
-          {/* Signature Area */}
-          <table className="mt-2">
-            <tbody>
-              <tr className="section-header">
-                <td colSpan={2} className="font-bold py-1 uppercase">Evaluated by:</td>
-              </tr>
-              <tr>
-                <td className="w-1/2 h-16 align-top p-2">
-                  <div className="font-bold mb-6 uppercase text-[6.5pt]">Safety Manager (Signature & Title)</div>
-                  <div className="border-b border-black w-[90%] font-black h-4 flex items-end pb-0.5 ml-1" style={{ fontSize: '8pt' }}>
-                    {formData.safetyManager}
-                  </div>
-                </td>
-                <td className="w-1/2 h-16 align-top p-2">
-                  <div className="font-bold mb-6 uppercase text-[6.5pt]">Department In charge (Signature & Title)</div>
-                  <div className="border-b border-black w-[90%] font-black h-4 flex items-end pb-0.5 ml-1" style={{ fontSize: '8pt' }}>
-                    {formData.deptInCharge}
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          {/* Evaluated By Section */}
+          <div className="grid-table mt-1.5">
+            <div className="grid-row section-header" style={{ minHeight: '18pt' }}>
+              <div className="grid-cell flex-1 font-black">EVALUATED BY:</div>
+            </div>
+            <div className="grid-row h-[80pt]">
+              <div className="grid-cell w-1/2 !flex-[0_0_50%] flex-col items-start p-3">
+                <div className="font-black mb-auto uppercase">Safety Manager (Signature & Title)</div>
+                <div className="border-b-[2pt] w-[95%] font-black h-6 mb-1 flex items-end pb-1 ml-1 text-[10pt]" style={{ borderColor: '#000' }}>
+                  {formData.safetyManager}
+                </div>
+              </div>
+              <div className="grid-cell w-1/2 !flex-[0_0_50%] flex-col items-start p-3">
+                <div className="font-black mb-auto uppercase">Department In charge (Signature & Title)</div>
+                <div className="border-b-[2pt] w-[95%] font-black h-6 mb-1 flex items-end pb-1 ml-1 text-[10pt]" style={{ borderColor: '#000' }}>
+                  {formData.deptInCharge}
+                </div>
+              </div>
+            </div>
+          </div>
 
-          {/* Industrial Footer */}
-          <table style={{ border: 'none', borderTop: '1pt solid #000000', marginTop: '6pt' }}>
-            <tbody>
-              <tr style={{ border: 'none' }}>
-                <td style={{ border: 'none', width: '50%', padding: '4pt 0 0 0' }} className="text-[8pt] font-bold uppercase">
-                  <div>PREPARED BY: SAFETY MANAGER</div>
-                  <div>APPROVED BY: VP TECHNICAL</div>
-                  <div>REVISION DATE: 01.08.2024</div>
-                </td>
-                <td style={{ border: 'none', width: '50%', textAlign: 'right', padding: '4pt 0 0 0', verticalAlign: 'bottom' }} className="text-[9pt] font-black uppercase italic">
-                  “CLASSIFIED – CONFIDENTIAL FOR INTERNAL USE ONLY”
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          {/* Professional Footer */}
+          <div className="mt-6 pt-3 flex justify-between items-end" style={{ borderTop: '1.5pt solid #000' }}>
+            <div className="text-[10pt] font-black uppercase leading-normal">
+              <div>PREPARED BY: SAFETY MANAGER</div>
+              <div>APPROVED BY: VP TECHNICAL</div>
+              <div>REVISION DATE: 01.08.2024</div>
+            </div>
+            <div className="text-[12pt] font-black uppercase italic tracking-tighter">
+              “CLASSIFIED – CONFIDENTIAL FOR INTERNAL USE ONLY”
+            </div>
+          </div>
         </div>
       </div>
     </div>

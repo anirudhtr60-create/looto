@@ -19,10 +19,42 @@ const ICON_MAP: Record<string, any> = {
 interface ModeReferenceProps {
   lang: Language;
   onBack: () => void;
+  isLoading?: boolean;
 }
 
-export default function ModeReference({ lang, onBack }: ModeReferenceProps) {
+export default function ModeReference({ lang, onBack, isLoading }: ModeReferenceProps) {
   const [expandedMode, setExpandedMode] = useState<ModeId | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="py-8 px-4 text-left">
+        <div className="mb-12 flex flex-col md:flex-row md:items-start justify-between gap-6">
+          <div className="w-full">
+            <div className="h-10 w-64 bg-slate-200 rounded-lg animate-pulse mb-3" />
+            <div className="h-6 w-96 bg-slate-100 rounded-lg animate-pulse" />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 gap-6">
+          {[1, 2, 3, 4, 5, 0].map((i) => (
+            <div key={i} className="bg-white/40 rounded-[24px] border border-white/60 p-6 flex flex-col gap-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-slate-200 rounded-xl animate-pulse shrink-0" />
+                  <div className="flex flex-col gap-2">
+                    <div className="h-4 w-24 bg-slate-200 rounded animate-pulse" />
+                    <div className="h-6 w-48 bg-slate-100 rounded animate-pulse" />
+                  </div>
+                </div>
+                <div className="flex-1 max-w-xl h-4 bg-slate-100 rounded animate-pulse hidden md:block" />
+                <div className="w-5 h-5 bg-slate-200 rounded-full animate-pulse shrink-0" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-8 px-4 text-left">

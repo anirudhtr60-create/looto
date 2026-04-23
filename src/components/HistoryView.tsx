@@ -11,10 +11,50 @@ interface HistoryViewProps {
   onClear: () => void;
   onBack: () => void;
   onViewDetails: (record: AssessmentRecord) => void;
+  isLoading?: boolean;
 }
 
-export default function HistoryView({ history, lang, onClear, onBack, onViewDetails }: HistoryViewProps) {
+export default function HistoryView({ history, lang, onClear, onBack, onViewDetails, isLoading }: HistoryViewProps) {
   const t = UI_TRANSLATIONS[lang];
+
+  if (isLoading) {
+    return (
+      <div className="py-8 px-2 md:px-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-12 gap-6">
+          <div className="flex flex-col md:flex-row md:items-center gap-6">
+            <div className="w-12 h-12 bg-slate-200 rounded-2xl animate-pulse" />
+            <div className="text-left space-y-3">
+              <div className="h-10 w-64 bg-slate-200 rounded-lg animate-pulse" />
+              <div className="h-4 w-32 bg-slate-100 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 gap-4 md:gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="glass-card p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border-l-[6px] border-slate-200 animate-pulse">
+              <div className="flex items-start md:items-center gap-6 text-left w-full">
+                <div className="w-14 h-14 bg-slate-200 rounded-2xl shrink-0" />
+                <div className="flex-1 space-y-4">
+                  <div className="h-6 w-3/4 bg-slate-200 rounded" />
+                  <div className="flex gap-4">
+                    <div className="h-4 w-32 bg-slate-100 rounded" />
+                    <div className="h-4 w-32 bg-slate-100 rounded" />
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="h-6 w-20 bg-slate-50 rounded" />
+                    <div className="h-6 w-24 bg-slate-50 rounded" />
+                    <div className="h-6 w-16 bg-slate-50 rounded" />
+                  </div>
+                </div>
+              </div>
+              <div className="h-12 w-32 bg-slate-200 rounded-xl" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const exportData = (format: 'json' | 'csv') => {
     if (history.length === 0) return;
