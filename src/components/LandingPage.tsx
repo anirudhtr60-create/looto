@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Shield } from 'lucide-react';
+import { Shield, ArrowLeft, ArrowRight, Sparkles, Search, Zap, Target, ClipboardCheck, Home, Lock } from 'lucide-react';
 import { Language } from '../types';
 import { UI_TRANSLATIONS } from '../constants';
 import Tooltip from './Tooltip';
@@ -8,108 +8,165 @@ import Tooltip from './Tooltip';
 interface LandingPageProps {
   onStart: (activity: string) => void;
   lang: Language;
+  onBack: () => void;
 }
 
 const SUGGESTIONS = {
   en: [
-    'Machine Maintenance',
-    'Belt Replacement',
-    'Electrical Work',
     'HVAC Filter Replacement',
     'Pump Seal Inspection',
-    'Conveyor Deep Cleaning',
-    'Blade Change'
+    'Motor Bearing Lubrication',
+    'Main Breaker Maintenance',
+    'Conveyor Belt Tensioning',
+    'Safety Valve Testing'
   ],
   hi: [
-    'मशीन रखरखाव',
-    'बेल्ट बदलना',
-    'विद्युत कार्य',
     'HVAC फ़िल्टर प्रतिस्थापन',
     'पंप सील निरीक्षण',
-    'कन्वेयर गहरी सफाई',
-    'ब्लेड बदलना'
+    'मोटर बेयरिंग स्नेहन',
+    'मुख्य ब्रेकर रखरखाव',
+    'कन्वेयर बेल्ट तनाव',
+    'सुरक्षा वाल्व परीक्षण'
   ]
 };
 
-export default function LandingPage({ onStart, lang }: LandingPageProps) {
+export default function LandingPage({ onStart, lang, onBack }: LandingPageProps) {
   const [activity, setActivity] = useState('');
   const t = UI_TRANSLATIONS[lang];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] py-8 md:py-12 px-2 md:px-4">
+    <div className="max-w-5xl mx-auto py-16 px-6 text-left">
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-3xl"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-16"
       >
-        <div className="flex items-center gap-4 mb-8 px-2">
-          <div className="w-12 h-12 bg-[#0f172a] rounded-2xl flex items-center justify-center shadow-xl">
-            <Shield size={28} className="text-white" />
-          </div>
-          <div className="text-left">
-            <h2 className="text-2xl font-black text-[#0f172a] tracking-tighter m-0 uppercase leading-none">{t.appTitle}</h2>
-            <p className="text-xs text-slate-600 font-black tracking-[0.2em] uppercase m-0 mt-1">{t.aboutApp}</p>
-          </div>
-        </div>
-
-        <div className="glass-card p-8 md:p-14 shadow-2xl relative overflow-hidden">
-          {/* Subtle background decoration */}
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-slate-900/5 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="mb-10 text-left relative z-10">
-            <span className="badge bg-[#dcfce7] text-[#166534] mb-5 inline-block font-black tracking-widest text-[10px]">
-              {lang === 'en' ? 'SAFETY FIRST' : 'सुरक्षा पहले'}
-            </span>
-            <h3 className="text-4xl md:text-5xl font-extrabold text-[#0f172a] leading-[1.1] mb-6 tracking-tighter">
-              {lang === 'en' ? 'Start a New Safety Assessment.' : 'एक नया सुरक्षा मूल्यांकन शुरू करें।'}
-            </h3>
-            <p className="text-lg md:text-xl text-slate-700 leading-relaxed mb-10 font-medium">
-              {lang === 'en' 
-                ? 'Define the activity you are assessing to determine the appropriate safety lockout mode.' 
-                : 'उचित सुरक्षा लॉकआउट मोड निर्धारित करने के लिए उस कार्य को परिभाषित करें जिसका आप मूल्यांकन कर रहे हैं।'}
-            </p>
+        <header className="space-y-6">
+          <motion.div variants={itemVariants} className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className="px-5 py-2.5 bg-[#16a34a] text-white text-[10px] font-black uppercase tracking-[0.3em] rounded-full shadow-lg shadow-green-500/20 flex items-center gap-2">
+                <Lock size={12} className="text-white/80" />
+                {lang === 'en' ? 'Core Safety Service' : 'कोर सुरक्षा सेवा'}
+              </div>
+              <div className="w-px h-6 bg-slate-200 hidden md:block" />
+              <button 
+                onClick={onBack}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-100 rounded-xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-slate-900 hover:border-slate-300 hover:shadow-sm transition-all group"
+              >
+                <Home size={14} className="group-hover:scale-110 transition-transform" />
+                {lang === 'en' ? 'Home' : 'होम'}
+              </button>
+            </div>
             
-            <label htmlFor="activity" className="block text-[11px] font-black text-slate-500 uppercase tracking-[0.15em] mb-4">
-              {lang === 'en' ? 'What activity will you perform?' : 'आप कौन सी गतिविधि करेंगे?'}
-            </label>
-            <textarea
-              id="activity"
-              value={activity}
-              onChange={(e) => setActivity(e.target.value)}
-              placeholder={t.activityPlaceholder}
-              aria-required="true"
-              className="w-full px-6 py-5 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-[#0f172a] focus:bg-white transition-all outline-none text-xl min-h-[160px] resize-none shadow-inner placeholder-slate-400 font-bold"
-            />
+            <button 
+              onClick={onBack}
+              className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-slate-900 transition-colors"
+            >
+              <ArrowLeft size={14} />
+              {lang === 'en' ? 'Back to Portal' : 'पोर्टल पर वापस'}
+            </button>
+          </motion.div>
+          
+          <motion.h1 variants={itemVariants} className="text-6xl md:text-8xl font-display font-black text-[#0f172a] leading-[0.85] tracking-tighter max-w-4xl">
+            {lang === 'en' ? 'ASSESS THE' : 'आकलन करें'} <br/>
+            <span className="text-[#16a34a]">{lang === 'en' ? 'RISK' : 'जोखिम'}</span>
+            <span className="text-slate-300 ml-4 font-normal">/</span>
+            <span className="ml-4">{lang === 'en' ? 'SAVE LIVES' : 'जान बचाएं'}</span>
+          </motion.h1>
+
+          <motion.p variants={itemVariants} className="text-xl md:text-2xl text-slate-500 font-medium max-w-2xl leading-relaxed">
+            {lang === 'en' 
+              ? 'Our intelligent decision engine determines the precise lockout protocols required for your maintenance activities.' 
+              : 'हमारा इंटेलिजेंट निर्णय इंजन आपकी रखरखाव गतिविधियों के लिए आवश्यक सटीक लॉकआउट प्रोटोकॉल निर्धारित करता है।'}
+          </motion.p>
+        </header>
+
+        <motion.section variants={itemVariants} className="space-y-8">
+          <div className="relative group">
+            <div className="absolute inset-0 bg-green-500/5 blur-3xl group-focus-within:bg-green-500/10 transition-colors pointer-events-none rounded-full" />
+            <div className="relative">
+              <div className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-300">
+                <Search size={32} />
+              </div>
+              <input
+                type="text"
+                value={activity}
+                onChange={(e) => setActivity(e.target.value)}
+                placeholder={lang === 'en' ? "Maintenance activity description..." : "रखरखाव गतिविधि विवरण..."}
+                className="w-full h-24 md:h-28 bg-white border-2 border-slate-100 rounded-[2.5rem] pl-24 pr-12 text-2xl md:text-3xl font-display font-bold text-slate-900 placeholder:text-slate-200 transition-all focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none shadow-xl shadow-slate-900/5"
+              />
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => activity.trim() && onStart(activity)}
+                disabled={!activity.trim()}
+                className="absolute right-4 top-1/2 -translate-y-1/2 px-10 h-16 md:h-20 bg-[#0f172a] text-white rounded-[1.8rem] font-black text-sm uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-slate-900/40 disabled:opacity-30 disabled:pointer-events-none transition-all hover:bg-[#16a34a]"
+              >
+                {t.startAssessment}
+                <ArrowRight size={20} />
+              </motion.button>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-8 pt-8 border-t border-slate-100 relative z-10">
-            <div className="flex flex-wrap gap-2 justify-center md:justify-start" role="group" aria-label={lang === 'en' ? 'Activity suggestions' : 'गतिविधि सुझाव'}>
-              {SUGGESTIONS[lang].map((suggestion) => (
-                <button
+          <div className="space-y-4 px-4 text-left">
+            <div className="flex items-center gap-3">
+              <Sparkles size={16} className="text-yellow-500" />
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">{lang === 'en' ? 'Quick Suggestions' : 'त्वरित सुझाव'}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(SUGGESTIONS[lang] || []).map((suggestion, idx) => (
+                <motion.button
                   key={suggestion}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1 + (idx * 0.05) }}
+                  whileHover={{ y: -2, bg: '#0f172a', color: '#fff' }}
                   onClick={() => setActivity(suggestion)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-700 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all focus-visible:ring-2 focus-visible:ring-slate-900 outline-none transform hover:-translate-y-0.5"
-                  aria-label={`${lang === 'en' ? 'Use suggestion' : 'सुझाव का उपयोग करें'}: ${suggestion}`}
+                  className="px-6 py-2.5 bg-slate-100/80 rounded-2xl text-xs font-bold text-slate-600 border border-white hover:border-slate-900 hover:shadow-lg transition-all"
                 >
                   {suggestion}
-                </button>
+                </motion.button>
               ))}
             </div>
-            
-            <div className="flex justify-center md:justify-end">
-              <Tooltip content={t.startAssessment}>
-                <button
-                  onClick={() => activity.trim() && onStart(activity)}
-                  disabled={!activity.trim()}
-                  className="btn-primary flex items-center gap-3 group w-full md:w-auto justify-center py-4 px-10 text-lg shadow-xl shadow-blue-600/20 disabled:shadow-none"
-                  aria-label={t.startAssessment}
-                >
-                  {t.startAssessment}
-                </button>
-              </Tooltip>
-            </div>
           </div>
-        </div>
+        </motion.section>
+
+        <motion.footer variants={itemVariants} className="pt-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 w-full">
+            {[
+              { icon: Zap, title: 'Real-time', desc: 'Instant safety clearance and protocols' },
+              { icon: Target, title: 'Precision', desc: 'Site-specific machine intelligence' },
+              { icon: ClipboardCheck, title: 'Compliant', desc: 'Fully aligned with global safety standards' },
+            ].map((feature, i) => (
+              <div key={i} className="flex gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-[#16a34a] shrink-0">
+                  <feature.icon size={24} />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-black text-xs uppercase tracking-widest text-[#0f172a]">{feature.title}</h4>
+                  <p className="text-xs text-slate-500 font-medium leading-relaxed">{feature.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.footer>
       </motion.div>
     </div>
   );

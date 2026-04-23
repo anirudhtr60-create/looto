@@ -23,6 +23,7 @@ interface ResultScreenProps {
   assessment: AssessmentState;
   onRestart: () => void;
   onBack: () => void;
+  onExit: () => void;
   lang: Language;
 }
 
@@ -37,14 +38,42 @@ const ICON_MAP: Record<string, any> = {
   ClipboardList,
 };
 
-export default function ResultScreen({ assessment, onRestart, onBack, lang }: ResultScreenProps) {
+export default function ResultScreen({ assessment, onRestart, onBack, onExit, lang }: ResultScreenProps) {
   const resultMode = MODES[assessment.result as ModeId];
+  
+  if (!resultMode) {
+    return (
+      <div className="p-8 text-center bg-red-50 rounded-2xl border border-red-200">
+        <p className="text-red-600 font-bold">Error: Invalid mode encountered ({assessment.result})</p>
+        <button onClick={onRestart} className="mt-4 btn-primary">{UI_TRANSLATIONS[lang]?.restart || 'Restart'}</button>
+      </div>
+    );
+  }
+
   const ResultIcon = ICON_MAP[resultMode.icon] || Shield;
-  const t = UI_TRANSLATIONS[lang];
-  const modeT = resultMode.translations[lang];
+  const t = UI_TRANSLATIONS[lang] || UI_TRANSLATIONS['en'];
+  const modeT = resultMode.translations?.[lang] || resultMode.translations?.['en'];
+
+  if (!modeT) {
+    return (
+      <div className="p-8 text-center bg-red-50 rounded-2xl border border-red-200">
+        <p className="text-red-600 font-bold">Error: Translation missing for mode {resultMode.id}</p>
+        <button onClick={onRestart} className="mt-4 btn-primary">{t.restart}</button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
+      <div className="flex items-center justify-start mb-6">
+        <button 
+          onClick={onExit}
+          className="flex items-center gap-1 text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] hover:text-slate-900 transition-colors w-fit transition-all hover:-translate-x-1"
+        >
+          <ChevronLeft size={16} />
+          {lang === 'en' ? 'Back to Portal' : 'पोर्टल पर वापस'}
+        </button>
+      </div>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -131,21 +160,25 @@ export default function ResultScreen({ assessment, onRestart, onBack, lang }: Re
           <aside className="glass-card p-8 bg-white/40 text-left" aria-label={lang === 'en' ? 'Mode legend' : 'मोड लेजेंड'}>
             <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-8">{t.navReference}</h3>
             <div className="space-y-6">
-              {[4, 3, 2, 1, 0].map(id => (
-                <div key={id} className="flex items-center gap-4">
-                   <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: MODES[id as ModeId].color }} aria-hidden="true" />
-                   <div className="flex flex-col">
-                      <span className="text-xs font-black text-[#0f172a] uppercase tracking-wider">
-                        {lang === 'en' ? `Mode ${id}` : `मोड ${id}`}
-                      </span>
-                      {id === assessment.result && (
-                        <span className="text-[9px] text-blue-600 font-black uppercase tracking-tighter mt-0.5">
-                          {lang === 'en' ? 'ACTIVE SELECTION' : 'सक्रिय चयन'}
+              {[4, 3, 2, 1, 0].map(id => {
+                const mode = MODES[id as ModeId];
+                if (!mode) return null;
+                return (
+                  <div key={id} className="flex items-center gap-4">
+                    <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: mode.color }} aria-hidden="true" />
+                    <div className="flex flex-col">
+                        <span className="text-xs font-black text-[#0f172a] uppercase tracking-wider">
+                          {lang === 'en' ? `Mode ${id}` : `मोड ${id}`}
                         </span>
-                      )}
-                   </div>
-                </div>
-              ))}
+                        {id === assessment.result && (
+                          <span className="text-[9px] text-blue-600 font-black uppercase tracking-tighter mt-0.5">
+                            {lang === 'en' ? 'ACTIVE SELECTION' : 'सक्रिय चयन'}
+                          </span>
+                        )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </aside>
         </div>
@@ -160,7 +193,7 @@ export default function ResultScreen({ assessment, onRestart, onBack, lang }: Re
               <h2 className="text-3xl md:text-4xl font-extrabold text-[#0f172a] mb-10 tracking-tighter leading-none">{t.howToProceed}</h2>
               
               <div className="space-y-8">
-                {modeT.requirements.map((req, idx) => (
+                {(modeT.requirements || []).map((req, idx) => (
                   <div key={idx} className="flex gap-5 items-start group">
                     <div className="w-7 h-7 rounded-lg bg-green-100 flex items-center justify-center shrink-0 mt-1 shadow-sm transition-transform group-hover:scale-110" aria-hidden="true">
                       <Check size={16} className="text-green-700" strokeWidth={4} />
@@ -246,7 +279,7 @@ export default function ResultScreen({ assessment, onRestart, onBack, lang }: Re
               </h3>
               
               <div className="space-y-6">
-                {modeT.examples.map((ex, idx) => (
+                {(modeT.examples || []).map((ex, idx) => (
                   <div key={idx} className="flex gap-5 items-center p-5 bg-white/40 rounded-[1.5rem] border border-white/60 shadow-sm hover:shadow-md transition-shadow">
                     <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] shrink-0" aria-hidden="true" />
                     <p className="text-lg text-slate-800 font-bold leading-tight">{ex}</p>
@@ -274,7 +307,7 @@ export default function ResultScreen({ assessment, onRestart, onBack, lang }: Re
         </div>
         
         <div className="space-y-8">
-          {assessment.path.map((step, idx) => (
+          {(assessment.path || []).map((step, idx) => (
             <div key={idx} className="flex gap-6 relative">
               {idx !== assessment.path.length - 1 && (
                 <div className="absolute left-[15px] top-10 bottom-[-32px] w-0.5 bg-white/10" aria-hidden="true" />
@@ -286,7 +319,15 @@ export default function ResultScreen({ assessment, onRestart, onBack, lang }: Re
               </div>
               <div className="flex-1 pb-4 text-left">
                 <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.1em] mb-2 block">{t.step} {idx + 1}</span>
-                <p className="text-lg text-white font-bold mb-2 leading-snug">{QUESTIONS[step.questionId].translations[lang].text}</p>
+                {QUESTIONS[step.questionId] ? (
+                  <Tooltip content={QUESTIONS[step.questionId].translations?.[lang]?.helperText || QUESTIONS[step.questionId].translations?.['en']?.helperText}>
+                    <p className="text-lg text-white font-bold mb-2 leading-snug cursor-help border-b border-dotted border-white/20 inline-block">
+                      {QUESTIONS[step.questionId].translations?.[lang]?.text || QUESTIONS[step.questionId].translations?.['en']?.text}
+                    </p>
+                  </Tooltip>
+                ) : (
+                  <p className="text-lg text-white/60 italic mb-2 leading-snug">Question data unavailable</p>
+                )}
                 <div className="flex items-center gap-3">
                   <span className={`text-xs font-black uppercase tracking-widest ${
                     step.answer ? 'text-green-400' : 'text-red-400'

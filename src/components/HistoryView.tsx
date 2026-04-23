@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { History as HistoryIcon, Clock, ChevronRight, Activity, Trash2, Download, FileJson, FileText, CheckCircle2, XCircle } from 'lucide-react';
+import { History as HistoryIcon, Clock, ChevronRight, Activity, Trash2, Download, FileJson, FileText, CheckCircle2, XCircle, ArrowLeft } from 'lucide-react';
 import { QUESTIONS } from '../constants';
 import { AssessmentRecord, Language } from '../types';
 import { MODES, UI_TRANSLATIONS } from '../constants';
@@ -9,10 +9,11 @@ interface HistoryViewProps {
   history: AssessmentRecord[];
   lang: Language;
   onClear: () => void;
+  onBack: () => void;
   onViewDetails: (record: AssessmentRecord) => void;
 }
 
-export default function HistoryView({ history, lang, onClear, onViewDetails }: HistoryViewProps) {
+export default function HistoryView({ history, lang, onClear, onBack, onViewDetails }: HistoryViewProps) {
   const t = UI_TRANSLATIONS[lang];
 
   const exportData = (format: 'json' | 'csv') => {
@@ -29,18 +30,19 @@ export default function HistoryView({ history, lang, onClear, onViewDetails }: H
       const headers = lang === 'en' 
         ? ['ID', 'Activity', 'Timestamp', 'Date', 'Result Mode', 'Language', 'Decision Path']
         : ['आईडी', 'गतिविधि', 'टाइमस्टैम्प', 'दिनांक', 'रिजल्ट मोड', 'भाषा', 'निर्णय पथ'];
-      const rows = history.map(rec => {
-        const pathStr = rec.path?.map(p => `${p.questionId}:${p.answer ? 'YES' : 'NO'}`).join(' | ') || '';
-        return [
-          rec.id,
-          `"${rec.activity.replace(/"/g, '""')}"`,
-          rec.timestamp,
-          new Date(rec.timestamp).toISOString(),
-          MODES[rec.result].name,
-          rec.language,
-          `"${pathStr}"`
-        ];
-      });
+          const rows = history.map(rec => {
+            const pathStr = rec.path?.map(p => `${p.questionId}:${p.answer ? 'YES' : 'NO'}`).join(' | ') || '';
+            const mode = MODES[rec.result];
+            return [
+              rec.id,
+              `"${rec.activity.replace(/"/g, '""')}"`,
+              rec.timestamp,
+              new Date(rec.timestamp).toISOString(),
+              mode ? mode.name : `Mode ${rec.result}`,
+              rec.language,
+              `"${pathStr}"`
+            ];
+          });
       const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
       blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       filename = `loto_history_${Date.now()}.csv`;
@@ -61,13 +63,22 @@ export default function HistoryView({ history, lang, onClear, onViewDetails }: H
   return (
     <div className="py-8 px-2 md:px-4">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-12 gap-6">
-        <div>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-[#0f172a] mb-3 tracking-tighter">
-            {t.historyTitle}
-          </h1>
-          <p className="text-slate-600 text-left font-bold uppercase tracking-widest text-xs">
-            {lang === 'en' ? `${history.length} records found` : `${history.length} रिकॉर्ड मिले`}
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center gap-6">
+          <button 
+            onClick={onBack}
+            className="p-3 bg-white border border-slate-200 text-slate-500 rounded-2xl hover:text-slate-900 transition-all shadow-sm flex items-center justify-center w-fit"
+            title={lang === 'en' ? 'Back to Portal' : 'पोर्टल पर वापस'}
+          >
+            <ArrowLeft size={24} />
+          </button>
+          <div className="text-left">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-[#0f172a] mb-3 tracking-tighter">
+              {t.historyTitle}
+            </h1>
+            <p className="text-slate-600 font-bold uppercase tracking-widest text-xs">
+              {lang === 'en' ? `${history.length} records found` : `${history.length} रिकॉर्ड मिले`}
+            </p>
+          </div>
         </div>
         
         {history.length > 0 && (
@@ -99,7 +110,14 @@ export default function HistoryView({ history, lang, onClear, onViewDetails }: H
 
             <Tooltip content={lang === 'en' ? 'Delete all records' : 'सभी रिकॉर्ड मिटाएं'}>
               <button 
-                onClick={onClear}
+                onClick={() => {
+                  const msg = lang === 'en' 
+                    ? 'Are you sure you want to delete all assessment records? This action cannot be undone.'
+                    : 'क्या आप वाकई सभी मूल्यांकन रिकॉर्ड हटाना चाहते हैं? इस कार्रवाई को पूर्ववत नहीं किया जा सकता।';
+                  if (window.confirm(msg)) {
+                    onClear();
+                  }
+                }}
                 className="flex items-center justify-center gap-2 text-red-600 hover:text-white hover:bg-red-600 border-2 border-red-100 hover:border-red-600 font-black text-xs uppercase tracking-[0.2em] transition-all focus-visible:ring-2 focus-visible:ring-red-600 p-4 px-6 rounded-2xl outline-none w-full md:w-auto shadow-lg shadow-red-600/5 active:scale-95"
                 aria-label={lang === 'en' ? 'Clear all history' : 'सारा इतिहास मिटाएं'}
               >
@@ -127,6 +145,11 @@ export default function HistoryView({ history, lang, onClear, onViewDetails }: H
         <div className="grid grid-cols-1 gap-4 md:gap-6">
           {history.map((record, index) => {
             const mode = MODES[record.result];
+            if (!mode) return null;
+            
+            const modeT = mode.translations?.[lang] || mode.translations?.['en'];
+            if (!modeT) return null;
+
             return (
               <motion.div
                 key={record.id}
@@ -158,21 +181,26 @@ export default function HistoryView({ history, lang, onClear, onViewDetails }: H
                       <span className="px-3 py-1 rounded-lg bg-slate-100 text-[#0f172a] shadow-sm flex items-center gap-2">
                         <span className="text-blue-600 font-black">Mode {record.result}</span>
                         <span className="w-[1px] h-3 bg-slate-300" />
-                        {mode.translations[lang].title}
+                        {modeT.title}
                       </span>
                     </div>
 
                     {/* Quick Path Summary */}
                     <div className="flex flex-wrap gap-2">
-                      {record.path.map((step, sIdx) => {
+                      {(record.path || []).map((step, sIdx) => {
                         const question = QUESTIONS[step.questionId];
+                        if (!question) return null;
+                        
+                        const qT = question.translations?.[lang] || question.translations?.['en'];
+                        if (!qT) return null;
+
                         return (
                           <div key={sIdx} className="flex items-center gap-1.5 p-2 bg-slate-50 rounded-lg border border-slate-100 group/path">
                             <div className={step.answer ? 'text-green-600' : 'text-red-600'}>
                               {step.answer ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
                             </div>
                             <span className="text-[9px] font-bold text-slate-600 truncate max-w-[100px]">
-                              {question.translations[lang].text}
+                              {qT.text}
                             </span>
                           </div>
                         );

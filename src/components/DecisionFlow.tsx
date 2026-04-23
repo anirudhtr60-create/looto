@@ -21,6 +21,7 @@ interface DecisionFlowProps {
   onAnswer: (answer: boolean) => void;
   onBack: () => void;
   onRestart: () => void;
+  onExit: () => void;
   lang: Language;
 }
 
@@ -35,10 +36,30 @@ const ICON_MAP: Record<string, any> = {
   Repeat,
 };
 
-export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart, lang }: DecisionFlowProps) {
+export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart, onExit, lang }: DecisionFlowProps) {
   const currentQuestion = QUESTIONS[assessment.currentStepId];
-  const qT = currentQuestion.translations[lang];
-  const t = UI_TRANSLATIONS[lang];
+  const t = UI_TRANSLATIONS[lang] || UI_TRANSLATIONS['en'];
+
+  if (!currentQuestion) {
+    return (
+      <div className="p-12 text-center bg-red-50 rounded-[2.5rem] border border-red-100 max-w-xl mx-auto my-12">
+        <p className="text-red-600 font-extrabold text-xl mb-4">Error: Step ID not found ({assessment.currentStepId})</p>
+        <button onClick={onRestart} className="btn-primary">{t.restart}</button>
+      </div>
+    );
+  }
+
+  const qT = currentQuestion.translations?.[lang] || currentQuestion.translations?.['en'];
+
+  if (!qT) {
+    return (
+      <div className="p-12 text-center bg-red-50 rounded-[2.5rem] border border-red-100 max-w-xl mx-auto my-12">
+        <p className="text-red-600 font-extrabold text-xl mb-4">Error: Question translations missing</p>
+        <button onClick={onRestart} className="btn-primary">{t.restart}</button>
+      </div>
+    );
+  }
+
   const QuestionIcon = ICON_MAP[currentQuestion.icon] || HelpCircle;
   const totalSteps = 6;
   const currentStepNum = assessment.path.length + 1;
@@ -48,6 +69,13 @@ export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart, 
       {/* Header Info */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex flex-col">
+          <button 
+            onClick={onExit}
+            className="flex items-center gap-1 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-slate-900 transition-colors mb-2 w-fit transition-all hover:-translate-x-1"
+          >
+            <ChevronLeft size={14} />
+            {lang === 'en' ? 'Back to Portal' : 'पोर्टल पर वापस'}
+          </button>
           <span className="text-xs font-bold uppercase tracking-widest text-[#0f172a] mb-1">
             {lang === 'en' ? 'Assessment in Progress' : 'मूल्यांकन प्रगति पर है'}
           </span>

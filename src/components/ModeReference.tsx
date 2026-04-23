@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Shield, Hand, User, Lock, AlertTriangle, BookOpen, ClipboardList, ShieldAlert, Check, ClipboardCheck, Info, ChevronDown } from 'lucide-react';
+import { ChevronRight, Shield, Hand, User, Lock, AlertTriangle, BookOpen, ClipboardList, ShieldAlert, Check, ClipboardCheck, Info, ChevronDown, ArrowLeft } from 'lucide-react';
 import { MODES } from '../constants';
 import { ModeId, Language } from '../types';
 import Tooltip from './Tooltip';
@@ -18,32 +18,45 @@ const ICON_MAP: Record<string, any> = {
 
 interface ModeReferenceProps {
   lang: Language;
+  onBack: () => void;
 }
 
-export default function ModeReference({ lang }: ModeReferenceProps) {
+export default function ModeReference({ lang, onBack }: ModeReferenceProps) {
   const [expandedMode, setExpandedMode] = useState<ModeId | null>(null);
 
   return (
     <div className="py-8 px-4 text-left">
-      <div className="mb-12">
-        <h1 className="text-4xl font-extrabold text-[#0f172a] mb-2 tracking-tight">
-          {lang === 'en' ? (
-            <>LOTO <span className="text-blue-600">Operation Reference</span></>
-          ) : (
-            <>लोटो <span className="text-blue-600">संचालन संदर्भ</span></>
-          )}
-        </h1>
-        <p className="text-lg text-slate-700 max-w-2xl font-medium">
-          {lang === 'en' 
-            ? 'Detailed breakdown of all safety lockout modes and their specific requirements.' 
-            : 'सभी सुरक्षा लॉकआउट मोड और उनकी विशिष्ट आवश्यकताओं का विस्तृत विवरण।'}
-        </p>
+      <div className="mb-12 flex flex-col md:flex-row md:items-start justify-between gap-6">
+        <div>
+          <h1 className="text-4xl font-extrabold text-[#0f172a] mb-2 tracking-tight">
+            {lang === 'en' ? (
+              <>LOTO <span className="text-blue-600">Operation Reference</span></>
+            ) : (
+              <>लोटो <span className="text-blue-600">संचालन संदर्भ</span></>
+            )}
+          </h1>
+          <p className="text-lg text-slate-700 max-w-2xl font-medium">
+            {lang === 'en' 
+              ? 'Detailed breakdown of all safety lockout modes and their specific requirements.' 
+              : 'सभी सुरक्षा लॉकआउट मोड और उनकी विशिष्ट आवश्यकताओं का विस्तृत विवरण।'}
+          </p>
+        </div>
+        <button 
+          onClick={onBack}
+          className="flex items-center gap-2 text-slate-500 font-black text-[11px] uppercase tracking-widest hover:text-slate-950 transition-colors bg-slate-100 px-6 py-3 rounded-xl w-fit"
+        >
+          <ArrowLeft size={16} />
+          {lang === 'en' ? 'Back to Portal' : 'पोर्टल पर वापस'}
+        </button>
       </div>
       
       <div className="grid grid-cols-1 gap-6" role="list">
         {([5, 4, 3, 2, 1, 0] as ModeId[]).map((id, index) => {
           const mode = MODES[id];
-          const modeT = mode.translations[lang];
+          if (!mode) return null;
+          
+          const modeT = mode.translations?.[lang] || mode.translations?.['en'];
+          if (!modeT) return null;
           
           const isExpanded = expandedMode === id;
           const ModeIcon = ICON_MAP[mode.icon] || Shield;
@@ -130,7 +143,7 @@ export default function ModeReference({ lang }: ModeReferenceProps) {
                               </h4>
                             </div>
                             <div className="space-y-2">
-                              {modeT.requirements.map((req, i) => (
+                              {(modeT.requirements || []).map((req, i) => (
                                 <div key={i} className="flex gap-3 items-start bg-slate-50/50 p-3 rounded-xl border border-slate-100">
                                   <Check className="text-green-600 shrink-0 mt-0.5" size={14} strokeWidth={4} />
                                   <p className="text-sm font-bold text-slate-700 leading-tight">{req}</p>
@@ -147,7 +160,7 @@ export default function ModeReference({ lang }: ModeReferenceProps) {
                               </h4>
                             </div>
                             <div className="space-y-2">
-                              {modeT.examples.map((ex, i) => (
+                              {(modeT.examples || []).map((ex, i) => (
                                 <div key={i} className="flex gap-3 items-center bg-blue-50/30 p-3 rounded-xl border border-blue-100/50">
                                   <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
                                   <p className="text-sm font-bold text-slate-700 leading-tight">{ex}</p>

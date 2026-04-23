@@ -18,10 +18,15 @@ import ResultScreen from './components/ResultScreen';
 import ModeReference from './components/ModeReference';
 import HistoryView from './components/HistoryView';
 import Tooltip from './components/Tooltip';
+import Portal from './components/Portal';
+import VehicleInspection from './components/VehicleInspection';
+import ContractorEvaluation from './components/ContractorEvaluation';
 
 type View = 'decision' | 'reference' | 'history';
+type Project = 'portal' | 'loto' | 'vehicle' | 'permits' | 'sop' | 'contractor';
 
 export default function App() {
+  const [project, setProject] = useState<Project>('portal');
   const [activeTab, setActiveTab] = useState<View>('decision');
   const [assessment, setAssessment] = useState<AssessmentState | null>(null);
   const [history, setHistory] = useState<AssessmentRecord[]>([]);
@@ -128,14 +133,23 @@ export default function App() {
   };
 
   const handleClearHistory = () => {
-    const msg = lang === 'en' ? 'Are you sure you want to clear all history?' : 'क्या आप वाकई सारा इतिहास मिटाना चाहते हैं?';
-    if (confirm(msg)) {
-      setHistory([]);
-      safeStorage.remove('loto_history');
-    }
+    setHistory([]);
+    safeStorage.remove('loto_history');
   };
 
   const t = UI_TRANSLATIONS[lang];
+
+  if (project === 'portal') {
+    return <Portal lang={lang} onSelectProject={(p) => setProject(p as Project)} />;
+  }
+
+  if (project === 'vehicle') {
+    return <VehicleInspection lang={lang} onBack={() => setProject('portal')} />;
+  }
+
+  if (project === 'contractor') {
+    return <ContractorEvaluation lang={lang} onBack={() => setProject('portal')} />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col font-sans transition-colors duration-300 bg-slate-50">
@@ -143,29 +157,41 @@ export default function App() {
         {lang === 'en' ? 'Skip to content' : 'सामग्री पर जाएँ'}
       </a>
       {/* Navigation Header */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 min-h-[5rem] h-auto md:h-20 flex flex-col md:flex-row items-center justify-between gap-4 py-4 md:py-0">
-          <div className="flex items-center gap-3 self-start md:self-auto">
-            <div className="w-10 h-10 bg-[#0f172a] rounded-xl flex items-center justify-center shadow-lg transition-transform hover:rotate-3 shrink-0">
-              <Shield size={24} className="text-white" />
-            </div>
+      <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-2xl border-b border-slate-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-auto md:h-24 flex flex-col md:flex-row items-center justify-between gap-6 py-4 md:py-0">
+          <div className="flex items-center gap-4 self-start md:self-auto">
+            <button 
+              onClick={() => setProject('portal')}
+              className="group flex items-center gap-2 pr-6 bg-slate-50 border border-slate-200/60 rounded-2xl hover:bg-[#0f172a] transition-all overflow-hidden shadow-sm hover:shadow-xl hover:shadow-slate-900/10"
+              title="Back to Portal"
+            >
+              <div className="w-12 h-12 bg-[#0f172a] group-hover:bg-[#1e293b] flex items-center justify-center transition-colors shadow-lg">
+                <Shield size={22} className="text-white" />
+              </div>
+              <span className="text-[11px] font-black text-slate-500 group-hover:text-white uppercase tracking-[0.2em] transition-colors pl-1">Portal</span>
+            </button>
             <div className="flex flex-col text-left">
-              <h1 className="font-extrabold text-xl md:text-2xl tracking-tighter text-[#0f172a] leading-none">{t.appTitle}</h1>
-              <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none mt-1">{t.aboutApp}</span>
+              <h1 className="font-display font-black text-2xl md:text-3xl tracking-tighter text-[#0f172a] leading-none">{t.appTitle}</h1>
+              <div className="flex items-center gap-2 mt-1.5">
+                <div className="w-2 h-2 rounded-full bg-[#16a34a] animate-pulse shadow-[0_0_8px_#16a34a]" />
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] leading-none">{t.aboutApp}</span>
+              </div>
             </div>
           </div>
           
-          <div className="flex items-center justify-between w-full md:w-auto gap-2">
-            <div className="flex bg-slate-100 p-1.5 rounded-2xl flex-1 md:flex-none justify-between md:justify-start shadow-inner" role="tablist">
+          <div className="flex items-center justify-between w-full md:w-auto gap-3">
+            <div className="flex bg-slate-100/80 p-2 rounded-[1.5rem] flex-1 md:flex-none justify-between md:justify-start shadow-inner border border-white" role="tablist">
               <Tooltip content={t.navDecision}>
                 <button
                   role="tab"
+                  id="tab-decision"
+                  aria-controls="panel-decision"
                   aria-selected={activeTab === 'decision'}
                   onClick={() => { setActiveTab('decision'); setAssessment(null); }}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-tight transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 h-11 ${
+                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 ${
                     activeTab === 'decision' 
-                    ? 'bg-white text-[#0f172a] shadow-sm' 
-                    : 'text-slate-600 hover:text-slate-950'
+                    ? 'bg-white text-[#0f172a] shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-black/5' 
+                    : 'text-slate-500 hover:text-slate-950'
                   }`}
                   aria-label={t.navDecision}
                 >
@@ -176,33 +202,37 @@ export default function App() {
               <Tooltip content={t.navReference}>
                 <button
                   role="tab"
+                  id="tab-reference"
+                  aria-controls="panel-reference"
                   aria-selected={activeTab === 'reference'}
                   onClick={() => setActiveTab('reference')}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-tight transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 h-11 ${
+                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 ${
                     activeTab === 'reference' 
-                    ? 'bg-white text-[#0f172a] shadow-sm' 
-                    : 'text-slate-600 hover:text-slate-950'
+                    ? 'bg-white text-[#0f172a] shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-black/5' 
+                    : 'text-slate-500 hover:text-slate-950'
                   }`}
                   aria-label={t.navReference}
                 >
                   <BookOpen size={16} aria-hidden="true" />
-                  <span className="hidden md:inline">{t.navReference}</span>
+                  <span className="hidden lg:inline">{t.navReference}</span>
                 </button>
               </Tooltip>
               <Tooltip content={t.navHistory}>
                 <button
                   role="tab"
+                  id="tab-history"
+                  aria-controls="panel-history"
                   aria-selected={activeTab === 'history'}
                   onClick={() => setActiveTab('history')}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-tight transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 h-11 ${
+                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 ${
                     activeTab === 'history' 
-                    ? 'bg-white text-[#0f172a] shadow-sm' 
-                    : 'text-slate-600 hover:text-slate-950'
+                    ? 'bg-white text-[#0f172a] shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-black/5' 
+                    : 'text-slate-500 hover:text-slate-950'
                   }`}
                   aria-label={t.navHistory}
                 >
                   <HistoryIcon size={16} aria-hidden="true" />
-                  <span className="hidden md:inline">{t.navHistory}</span>
+                  <span className="hidden lg:inline">{t.navHistory}</span>
                 </button>
               </Tooltip>
             </div>
@@ -243,18 +273,22 @@ export default function App() {
           {activeTab === 'decision' ? (
             <motion.div
               key="decision-view"
+              id="panel-decision"
+              role="tabpanel"
+              aria-labelledby="tab-decision"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className="w-full"
             >
               {!assessment ? (
-                <LandingPage onStart={handleStart} lang={lang} />
+                <LandingPage onStart={handleStart} lang={lang} onBack={() => setProject('portal')} />
               ) : assessment.result !== undefined ? (
                 <ResultScreen 
                   assessment={assessment} 
                   onRestart={handleRestart}
                   onBack={handleBack}
+                  onExit={() => setProject('portal')}
                   lang={lang}
                 />
               ) : (
@@ -263,6 +297,7 @@ export default function App() {
                   onAnswer={handleAnswer}
                   onBack={handleBack}
                   onRestart={handleRestart}
+                  onExit={() => setProject('portal')}
                   lang={lang}
                 />
               )}
@@ -270,16 +305,22 @@ export default function App() {
           ) : activeTab === 'reference' ? (
             <motion.div
               key="reference-view"
+              id="panel-reference"
+              role="tabpanel"
+              aria-labelledby="tab-reference"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className="w-full"
             >
-              <ModeReference lang={lang} />
+              <ModeReference lang={lang} onBack={() => setProject('portal')} />
             </motion.div>
           ) : (
             <motion.div
               key="history-view"
+              id="panel-history"
+              role="tabpanel"
+              aria-labelledby="tab-history"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -289,6 +330,7 @@ export default function App() {
                 history={history} 
                 lang={lang} 
                 onClear={handleClearHistory} 
+                onBack={() => setProject('portal')}
                 onViewDetails={(rec) => {
                   setActiveTab('decision');
                   setAssessment({ 
