@@ -1,12 +1,13 @@
 import { LucideIcon } from 'lucide-react';
 
-export type ModeId = 0 | 1 | 2 | 3 | 4;
+export type ModeId = 0 | 1 | 2 | 3 | 4 | 5;
 export type Language = 'en' | 'hi';
 
 export interface Translation {
   title: string;
   description: string;
   requirements: string[];
+  requirementTooltips?: string[];
   examples: string[];
 }
 
@@ -35,6 +36,7 @@ export interface AssessmentRecord {
   timestamp: number;
   result: ModeId;
   language: Language;
+  path: { questionId: string; answer: boolean }[];
 }
 
 export type StepAction = {

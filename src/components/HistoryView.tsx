@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { History as HistoryIcon, Clock, ChevronRight, Activity, Trash2, Download, FileJson, FileText } from 'lucide-react';
+import { History as HistoryIcon, Clock, ChevronRight, Activity, Trash2, Download, FileJson, FileText, CheckCircle2, XCircle } from 'lucide-react';
+import { QUESTIONS } from '../constants';
 import { AssessmentRecord, Language } from '../types';
 import { MODES, UI_TRANSLATIONS } from '../constants';
 import Tooltip from './Tooltip';
@@ -26,16 +27,20 @@ export default function HistoryView({ history, lang, onClear, onViewDetails }: H
       filename = `loto_history_${Date.now()}.json`;
     } else {
       const headers = lang === 'en' 
-        ? ['ID', 'Activity', 'Timestamp', 'Date', 'Result Mode', 'Language']
-        : ['आईडी', 'गतिविधि', 'टाइमस्टैम्प', 'दिनांक', 'रिजल्ट मोड', 'भाषा'];
-      const rows = history.map(rec => [
-        rec.id,
-        `"${rec.activity.replace(/"/g, '""')}"`,
-        rec.timestamp,
-        new Date(rec.timestamp).toISOString(),
-        MODES[rec.result].name,
-        rec.language
-      ]);
+        ? ['ID', 'Activity', 'Timestamp', 'Date', 'Result Mode', 'Language', 'Decision Path']
+        : ['आईडी', 'गतिविधि', 'टाइमस्टैम्प', 'दिनांक', 'रिजल्ट मोड', 'भाषा', 'निर्णय पथ'];
+      const rows = history.map(rec => {
+        const pathStr = rec.path?.map(p => `${p.questionId}:${p.answer ? 'YES' : 'NO'}`).join(' | ') || '';
+        return [
+          rec.id,
+          `"${rec.activity.replace(/"/g, '""')}"`,
+          rec.timestamp,
+          new Date(rec.timestamp).toISOString(),
+          MODES[rec.result].name,
+          rec.language,
+          `"${pathStr}"`
+        ];
+      });
       const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
       blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       filename = `loto_history_${Date.now()}.csv`;
@@ -54,102 +59,133 @@ export default function HistoryView({ history, lang, onClear, onViewDetails }: H
   };
 
   return (
-    <div className="py-8 px-4">
-      <div className="flex items-center justify-between mb-12">
+    <div className="py-8 px-2 md:px-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-12 gap-6">
         <div>
-          <h1 className="text-4xl font-extrabold text-[#0f172a] mb-2 tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-[#0f172a] mb-3 tracking-tighter">
             {t.historyTitle}
           </h1>
-          <p className="text-slate-500 text-left">
+          <p className="text-slate-600 text-left font-bold uppercase tracking-widest text-xs">
             {lang === 'en' ? `${history.length} records found` : `${history.length} रिकॉर्ड मिले`}
           </p>
         </div>
         
         {history.length > 0 && (
-          <div className="flex items-center gap-4">
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center bg-slate-100 p-1.5 rounded-2xl w-full md:w-auto shadow-sm">
               <Tooltip content={lang === 'en' ? 'Export as JSON' : 'JSON के रूप में निर्यात करें'}>
                 <button
                   onClick={() => exportData('json')}
-                  className="p-2 text-slate-500 hover:text-blue-500 transition-colors rounded-lg hover:bg-white"
-                  aria-label="Export JSON"
+                  className="flex-1 md:flex-none p-3 px-4 text-slate-700 hover:text-blue-700 transition-all rounded-xl hover:bg-white focus-visible:ring-2 focus-visible:ring-blue-600 outline-none flex items-center justify-center gap-2"
+                  aria-label={lang === 'en' ? 'Export assessment history as JSON' : 'आकलन इतिहास को JSON के रूप में निर्यात करें'}
                 >
-                  <FileJson size={18} />
+                  <FileJson size={20} aria-hidden="true" />
+                  <span className="md:hidden font-black text-[10px] tracking-tight">JSON</span>
                 </button>
               </Tooltip>
               <Tooltip content={lang === 'en' ? 'Export as CSV' : 'CSV के रूप में निर्यात करें'}>
                 <button
                   onClick={() => exportData('csv')}
-                  className="p-2 text-slate-500 hover:text-green-500 transition-colors rounded-lg hover:bg-white"
-                  aria-label="Export CSV"
+                  className="flex-1 md:flex-none p-3 px-4 text-slate-700 hover:text-green-700 transition-all rounded-xl hover:bg-white focus-visible:ring-2 focus-visible:ring-green-600 outline-none flex items-center justify-center gap-2"
+                  aria-label={lang === 'en' ? 'Export assessment history as CSV' : 'आकलन इतिहास को CSV के रूप में निर्यात करें'}
                 >
-                  <FileText size={18} />
+                  <FileText size={20} aria-hidden="true" />
+                  <span className="md:hidden font-black text-[10px] tracking-tight">CSV</span>
                 </button>
               </Tooltip>
             </div>
 
-            <div className="h-6 w-[1px] bg-slate-200" />
+            <div className="hidden lg:block h-8 w-[2px] bg-slate-200 mx-2" aria-hidden="true" />
 
-            <button 
-              onClick={onClear}
-              className="flex items-center gap-2 text-red-500 hover:text-red-600 font-bold text-xs uppercase tracking-widest transition-all"
-            >
-              <Trash2 size={16} />
-              {lang === 'en' ? 'Clear All' : 'सभी मिटाएं'}
-            </button>
+            <Tooltip content={lang === 'en' ? 'Delete all records' : 'सभी रिकॉर्ड मिटाएं'}>
+              <button 
+                onClick={onClear}
+                className="flex items-center justify-center gap-2 text-red-600 hover:text-white hover:bg-red-600 border-2 border-red-100 hover:border-red-600 font-black text-xs uppercase tracking-[0.2em] transition-all focus-visible:ring-2 focus-visible:ring-red-600 p-4 px-6 rounded-2xl outline-none w-full md:w-auto shadow-lg shadow-red-600/5 active:scale-95"
+                aria-label={lang === 'en' ? 'Clear all history' : 'सारा इतिहास मिटाएं'}
+              >
+                <Trash2 size={18} aria-hidden="true" />
+                {lang === 'en' ? 'Clear All' : 'सभी मिटाएं'}
+              </button>
+            </Tooltip>
           </div>
         )}
       </div>
 
       {history.length === 0 ? (
-        <div className="glass-card p-12 text-center">
-          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300 mx-auto mb-6">
-            <HistoryIcon size={32} />
+        <div className="glass-card p-16 text-center border-2 border-dashed border-slate-200 bg-white/20">
+          <div className="w-24 h-24 bg-slate-100 rounded-[2.5rem] flex items-center justify-center text-slate-300 mx-auto mb-8 shadow-inner">
+            <HistoryIcon size={48} aria-hidden="true" />
           </div>
-          <p className="text-slate-500 font-medium">
+          <p className="text-slate-600 font-black text-2xl tracking-tight mb-2">
             {t.noHistory}
+          </p>
+          <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">
+            {lang === 'en' ? 'Your assessments will appear here' : 'आपके मूल्यांकन यहां दिखाई देंगे'}
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 md:gap-6">
           {history.map((record, index) => {
             const mode = MODES[record.result];
             return (
               <motion.div
                 key={record.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="glass-card hover:bg-white/90 transition-all p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 group"
+                className="glass-card hover:bg-white transition-all p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 group shadow-md hover:shadow-xl border-l-[6px]"
+                style={{ borderLeftColor: mode.color }}
               >
-                <div className="flex items-center gap-6">
-                  <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg shrink-0"
-                    style={{ backgroundColor: mode.color }}
-                  >
-                    <Activity size={24} />
-                  </div>
+                <div className="flex items-start md:items-center gap-6 text-left">
+                  <Tooltip content={mode.name}>
+                    <div 
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-xl shrink-0 group-hover:scale-110 transition-transform cursor-help"
+                      style={{ backgroundColor: mode.color }}
+                    >
+                      <Activity size={28} aria-hidden="true" />
+                    </div>
+                  </Tooltip>
                   
-                  <div className="text-left">
-                    <h3 className="text-xl font-extrabold text-[#0f172a] tracking-tight mb-1">
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-black text-[#0f172a] tracking-tighter mb-2 leading-none">
                       {record.activity}
-                    </h3>
-                    <div className="flex items-center gap-4 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      <span className="flex items-center gap-1.5">
-                        <Clock size={14} />
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] font-black uppercase tracking-widest text-slate-500 mb-4">
+                      <span className="flex items-center gap-2">
+                        <Clock size={16} className="text-blue-500" aria-hidden="true" />
                         {new Date(record.timestamp).toLocaleString(lang === 'en' ? 'en-US' : 'hi-IN')}
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-slate-100 text-[10px]">
+                      <span className="px-3 py-1 rounded-lg bg-slate-100 text-[#0f172a] shadow-sm flex items-center gap-2">
+                        <span className="text-blue-600 font-black">Mode {record.result}</span>
+                        <span className="w-[1px] h-3 bg-slate-300" />
                         {mode.translations[lang].title}
                       </span>
+                    </div>
+
+                    {/* Quick Path Summary */}
+                    <div className="flex flex-wrap gap-2">
+                      {record.path.map((step, sIdx) => {
+                        const question = QUESTIONS[step.questionId];
+                        return (
+                          <div key={sIdx} className="flex items-center gap-1.5 p-2 bg-slate-50 rounded-lg border border-slate-100 group/path">
+                            <div className={step.answer ? 'text-green-600' : 'text-red-600'}>
+                              {step.answer ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                            </div>
+                            <span className="text-[9px] font-bold text-slate-600 truncate max-w-[100px]">
+                              {question.translations[lang].text}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center">
                   <button 
                     onClick={() => onViewDetails(record)}
-                    className="btn-primary py-2 px-6 text-sm"
+                    className="btn-primary py-4 px-10 text-sm font-black w-full md:w-auto shadow-lg shadow-blue-600/10 active:scale-95"
+                    aria-label={`${t.viewDetails} ${record.activity}`}
                   >
                     {t.viewDetails}
                   </button>

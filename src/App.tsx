@@ -30,6 +30,16 @@ export default function App() {
 
   const isDark = false;
 
+  const mainRef = useState<HTMLElement | null>(null)[0]; // We'll use id-based selection for simplicity since it's already there
+
+  // Tab focus management
+  useEffect(() => {
+    const mainElement = document.getElementById('main-content');
+    if (mainElement) {
+      mainElement.focus();
+    }
+  }, [activeTab]);
+
   // Load state from local storage
   useEffect(() => {
     setHistory(safeStorage.get<AssessmentRecord[]>('loto_history', []));
@@ -75,7 +85,8 @@ export default function App() {
         activity: assessment.activity,
         timestamp: Date.now(),
         result: resultModeId,
-        language: lang
+        language: lang,
+        path: newPath
       };
       const updatedHistory = [newRecord, ...history];
       setHistory(updatedHistory);
@@ -128,68 +139,83 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans transition-colors duration-300 bg-slate-50">
+      <a href="#main-content" className="skip-link">
+        {lang === 'en' ? 'Skip to content' : 'सामग्री पर जाएँ'}
+      </a>
       {/* Navigation Header */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 h-20 flex flex-col md:flex-row items-center justify-between gap-4 py-2 md:py-0">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-[#0f172a] rounded-xl flex items-center justify-center shadow-lg transition-transform hover:rotate-3">
+        <div className="max-w-6xl mx-auto px-4 min-h-[5rem] h-auto md:h-20 flex flex-col md:flex-row items-center justify-between gap-4 py-4 md:py-0">
+          <div className="flex items-center gap-3 self-start md:self-auto">
+            <div className="w-10 h-10 bg-[#0f172a] rounded-xl flex items-center justify-center shadow-lg transition-transform hover:rotate-3 shrink-0">
               <Shield size={24} className="text-white" />
             </div>
             <div className="flex flex-col text-left">
-              <span className="font-extrabold text-xl tracking-tighter text-[#0f172a] leading-none">{t.appTitle}</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">{t.aboutApp}</span>
+              <h1 className="font-extrabold text-xl md:text-2xl tracking-tighter text-[#0f172a] leading-none">{t.appTitle}</h1>
+              <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none mt-1">{t.aboutApp}</span>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <div className="flex bg-slate-100 p-1 rounded-xl">
-              <button
-                onClick={() => { setActiveTab('decision'); setAssessment(null); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-tight transition-all ${
-                  activeTab === 'decision' 
-                  ? 'bg-white text-[#0f172a] shadow-sm' 
-                  : 'text-slate-500 hover:text-slate-700'
-                }`}
-                aria-label={t.navDecision}
-              >
-                <ClipboardList size={14} />
-                <span className="hidden md:inline">{t.navDecision}</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('reference')}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-tight transition-all ${
-                  activeTab === 'reference' 
-                  ? 'bg-white text-[#0f172a] shadow-sm' 
-                  : 'text-slate-500 hover:text-slate-700'
-                }`}
-                aria-label={t.navReference}
-              >
-                <BookOpen size={14} />
-                <span className="hidden md:inline">{t.navReference}</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('history')}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-tight transition-all ${
-                  activeTab === 'history' 
-                  ? 'bg-white text-[#0f172a] shadow-sm' 
-                  : 'text-slate-500 hover:text-slate-700'
-                }`}
-                aria-label={t.navHistory}
-              >
-                <HistoryIcon size={14} />
-                <span className="hidden md:inline">{t.navHistory}</span>
-              </button>
+          <div className="flex items-center justify-between w-full md:w-auto gap-2">
+            <div className="flex bg-slate-100 p-1.5 rounded-2xl flex-1 md:flex-none justify-between md:justify-start shadow-inner" role="tablist">
+              <Tooltip content={t.navDecision}>
+                <button
+                  role="tab"
+                  aria-selected={activeTab === 'decision'}
+                  onClick={() => { setActiveTab('decision'); setAssessment(null); }}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-tight transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 h-11 ${
+                    activeTab === 'decision' 
+                    ? 'bg-white text-[#0f172a] shadow-sm' 
+                    : 'text-slate-600 hover:text-slate-950'
+                  }`}
+                  aria-label={t.navDecision}
+                >
+                  <ClipboardList size={16} aria-hidden="true" />
+                  <span className="hidden md:inline">{t.navDecision}</span>
+                </button>
+              </Tooltip>
+              <Tooltip content={t.navReference}>
+                <button
+                  role="tab"
+                  aria-selected={activeTab === 'reference'}
+                  onClick={() => setActiveTab('reference')}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-tight transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 h-11 ${
+                    activeTab === 'reference' 
+                    ? 'bg-white text-[#0f172a] shadow-sm' 
+                    : 'text-slate-600 hover:text-slate-950'
+                  }`}
+                  aria-label={t.navReference}
+                >
+                  <BookOpen size={16} aria-hidden="true" />
+                  <span className="hidden md:inline">{t.navReference}</span>
+                </button>
+              </Tooltip>
+              <Tooltip content={t.navHistory}>
+                <button
+                  role="tab"
+                  aria-selected={activeTab === 'history'}
+                  onClick={() => setActiveTab('history')}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-tight transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 h-11 ${
+                    activeTab === 'history' 
+                    ? 'bg-white text-[#0f172a] shadow-sm' 
+                    : 'text-slate-600 hover:text-slate-950'
+                  }`}
+                  aria-label={t.navHistory}
+                >
+                  <HistoryIcon size={16} aria-hidden="true" />
+                  <span className="hidden md:inline">{t.navHistory}</span>
+                </button>
+              </Tooltip>
             </div>
 
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl ml-2">
               <Tooltip content={t.langToggle}>
                 <button
                   onClick={toggleLang}
-                  className="p-2 text-slate-500 hover:text-blue-600 transition-colors rounded-lg flex items-center gap-2"
+                  className="p-2 text-slate-700 hover:text-blue-700 transition-colors rounded-lg flex items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                   aria-label={t.langToggle}
                 >
-                  <Languages size={18} />
-                  <span className="text-[10px] font-black uppercase tracking-tighter">{lang === 'en' ? 'HI' : 'EN'}</span>
+                  <Languages size={18} aria-hidden="true" />
+                  <span className="text-[10px] font-black uppercase tracking-tighter" aria-hidden="true">{lang === 'en' ? 'HI' : 'EN'}</span>
                 </button>
               </Tooltip>
             </div>
@@ -197,7 +223,7 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full p-4 md:p-8" role="main">
+      <main id="main-content" className="flex-1 max-w-6xl mx-auto w-full p-4 md:p-8" role="main" tabIndex={-1}>
         {/* Storage Notification Overlay */}
         <AnimatePresence>
           {storageError && (
@@ -265,7 +291,12 @@ export default function App() {
                 onClear={handleClearHistory} 
                 onViewDetails={(rec) => {
                   setActiveTab('decision');
-                  setAssessment({ activity: rec.activity, currentStepId: 'Q1', path: [], result: rec.result });
+                  setAssessment({ 
+                    activity: rec.activity, 
+                    currentStepId: 'Q1', 
+                    path: rec.path || [], 
+                    result: rec.result 
+                  });
                 }}
               />
             </motion.div>
@@ -273,7 +304,7 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      <footer className="py-8 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest border-t border-slate-200 bg-white/30">
+      <footer className="py-8 text-center text-slate-700 text-[10px] font-black uppercase tracking-widest border-t border-slate-200 bg-white/30">
         {lang === 'en' ? 'Based on Appendix A — LOTO Decision Tree' : 'Appendix A के आधार पर — लोटो निर्णय वृक्ष'} • {t.aboutApp}
       </footer>
     </div>

@@ -8,7 +8,9 @@ import {
   Wrench, 
   Maximize, 
   MoveRight,
-  HelpCircle
+  HelpCircle,
+  Shield,
+  Repeat
 } from 'lucide-react';
 import { AssessmentState, Language } from '../types';
 import { QUESTIONS, UI_TRANSLATIONS } from '../constants';
@@ -29,6 +31,8 @@ const ICON_MAP: Record<string, any> = {
   Wrench,
   Maximize,
   MoveRight,
+  Shield,
+  Repeat,
 };
 
 export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart, lang }: DecisionFlowProps) {
@@ -47,22 +51,23 @@ export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart, 
           <span className="text-xs font-bold uppercase tracking-widest text-[#0f172a] mb-1">
             {lang === 'en' ? 'Assessment in Progress' : 'मूल्यांकन प्रगति पर है'}
           </span>
-          <h2 className="text-sm font-medium text-slate-500 flex items-center gap-2">
-            {lang === 'en' ? 'Activity' : 'गतिविधि'}: <span className="text-slate-900 font-semibold">{assessment.activity}</span>
+          <h2 className="text-sm font-bold text-slate-600 flex items-center gap-2">
+            {lang === 'en' ? 'Activity' : 'गतिविधि'}: <span className="text-slate-900 font-extrabold">{assessment.activity}</span>
           </h2>
         </div>
         <Tooltip content={t.reset}>
           <button 
             onClick={onRestart}
-            className="text-xs font-semibold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-wider flex items-center gap-2"
+            className="text-xs font-bold text-slate-600 hover:text-red-600 transition-colors uppercase tracking-widest flex items-center gap-2 p-2 rounded-lg focus-visible:ring-2 focus-visible:ring-red-600 outline-none"
+            aria-label={t.reset}
           >
-            <RotateCcw size={14} />
+            <RotateCcw size={14} aria-hidden="true" />
             {t.reset}
           </button>
         </Tooltip>
       </div>
 
-      <div className="mb-12">
+      <div className="mb-12" role="progressbar" aria-valuenow={currentStepNum} aria-valuemin={1} aria-valuemax={totalSteps} aria-label={lang === 'en' ? 'Assessment progress' : 'मूल्यांकन प्रगति'}>
         <div className="flex justify-between items-center mb-3">
           <div className="flex gap-1.5 align-center">
             {[...Array(totalSteps)].map((_, i) => (
@@ -72,7 +77,7 @@ export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart, 
               />
             ))}
           </div>
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{t.step} {currentStepNum} {t.of} {totalSteps}</span>
+          <span className="text-xs font-bold text-slate-600 uppercase tracking-tighter">{t.step} {currentStepNum} {t.of} {totalSteps}</span>
         </div>
       </div>
 
@@ -88,21 +93,23 @@ export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart, 
         >
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-[#0f172a] shadow-sm">
-                <QuestionIcon size={24} />
+            <Tooltip content={qT.helperText || ''}>
+              <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-[#0f172a] shadow-sm cursor-help">
+                <QuestionIcon size={24} aria-hidden="true" />
               </div>
+            </Tooltip>
               <span className="badge bg-[#dcfce7] text-[#166534]">
                 {lang === 'en' ? 'Assessment' : 'मूल्यांकन'}
               </span>
             </div>
             
             <div className="flex flex-col">
-              <h3 className="text-3xl md:text-4xl font-extrabold text-[#0f172a] leading-tight mb-4 tracking-tight min-h-[80px]">
+              <h1 className="text-3xl md:text-4xl font-extrabold text-[#0f172a] leading-tight mb-4 tracking-tight min-h-[80px]">
                 {qT.text}
-              </h3>
+              </h1>
               
               {qT.helperText && (
-                <p className="text-lg text-slate-500 font-medium leading-relaxed max-w-2xl">
+                <p className="text-lg text-slate-700 font-bold leading-relaxed max-w-2xl">
                   {qT.helperText}
                 </p>
               )}
@@ -112,25 +119,25 @@ export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart, 
       </AnimatePresence>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-2 gap-4 md:gap-8">
         <button
           onClick={() => onAnswer(true)}
-          className="btn-yes flex flex-col items-center justify-center gap-3 p-8 rounded-2xl h-40 group"
-          aria-label={t.yes}
+          className="btn-yes flex flex-col items-center justify-center gap-2 md:gap-4 p-6 md:p-10 rounded-[2.5rem] min-h-[140px] md:h-52 group outline-none ring-offset-4"
+          aria-label={`${t.yes}: ${lang === 'en' ? 'Confirm state is true' : 'पुष्टि करें कि स्थिति सत्य है'}`}
         >
-          <span className="text-2xl font-black">{t.yes}</span>
-          <span className="text-xs font-bold opacity-60 uppercase tracking-widest group-hover:opacity-100 transition-opacity">
+          <span className="text-3xl md:text-5xl font-black transition-transform group-hover:scale-110">{t.yes}</span>
+          <span className="text-[10px] md:text-xs font-black opacity-50 uppercase tracking-[0.2em] group-hover:opacity-100 transition-opacity">
             {lang === 'en' ? 'Select Yes' : 'हाँ चुनें'}
           </span>
         </button>
 
         <button
           onClick={() => onAnswer(false)}
-          className="btn-no flex flex-col items-center justify-center gap-3 p-8 rounded-2xl h-40 group"
-          aria-label={t.no}
+          className="btn-no flex flex-col items-center justify-center gap-2 md:gap-4 p-6 md:p-10 rounded-[2.5rem] min-h-[140px] md:h-52 group outline-none ring-offset-4"
+          aria-label={`${t.no}: ${lang === 'en' ? 'Confirm state is false' : 'पुष्टि करें कि स्थिति असत्य है'}`}
         >
-          <span className="text-2xl font-black">{t.no}</span>
-          <span className="text-xs font-bold opacity-60 uppercase tracking-widest group-hover:opacity-100 transition-opacity">
+          <span className="text-3xl md:text-5xl font-black transition-transform group-hover:scale-110">{t.no}</span>
+          <span className="text-[10px] md:text-xs font-black opacity-50 uppercase tracking-[0.2em] group-hover:opacity-100 transition-opacity">
             {lang === 'en' ? 'Select No' : 'नहीं चुनें'}
           </span>
         </button>
@@ -140,10 +147,10 @@ export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart, 
         <Tooltip content={t.back}>
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-slate-400 hover:text-slate-600 font-bold text-xs uppercase tracking-widest transition-all"
+            className="flex items-center gap-2 text-slate-600 hover:text-[#0f172a] font-black text-xs uppercase tracking-widest transition-all p-2 rounded-lg focus-visible:ring-2 focus-visible:ring-slate-900 outline-none"
             aria-label={t.back}
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={18} aria-hidden="true" />
             {t.back}
           </button>
         </Tooltip>
