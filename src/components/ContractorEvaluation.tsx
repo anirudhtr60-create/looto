@@ -156,26 +156,26 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
       try {
         const docDefinition: any = {
           pageSize: 'A4',
-          pageMargins: [30, 40, 30, 40],
+          pageMargins: [25, 20, 25, 20],
           defaultStyle: {
             font: 'Roboto',
-            fontSize: 10
+            fontSize: 8
           },
           content: [
             {
               columns: [
-                { text: 'REVISION NO. 01', bold: true, fontSize: 10, width: '25%' },
+                { text: 'REVISION NO. 01', bold: true, fontSize: 8, width: '25%' },
                 {
                   stack: [
-                    { text: 'BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA', alignment: 'center', bold: true, fontSize: 11 },
-                    { text: 'CONTRACTOR PERFORMANCE EVALUATION REPORT FORM', alignment: 'center', bold: true, fontSize: 10, margin: [0, 2] },
-                    { text: 'BAIL-S-110-FRM-01-00-00-04', alignment: 'center', bold: true, fontSize: 10 }
+                    { text: 'BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA', alignment: 'center', bold: true, fontSize: 9 },
+                    { text: 'CONTRACTOR PERFORMANCE EVALUATION REPORT FORM', alignment: 'center', bold: true, fontSize: 8, margin: [0, 1] },
+                    { text: 'BAIL-S-110-FRM-01-00-00-04', alignment: 'center', bold: true, fontSize: 8 }
                   ],
                   width: '50%'
                 },
                 { text: '', width: '25%' }
               ],
-              margin: [0, 0, 0, 15]
+              margin: [0, 0, 0, 10]
             },
             {
               table: {
@@ -205,7 +205,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   }]
                 ]
               },
-              margin: [0, 0, 0, 10]
+              margin: [0, 0, 0, 8]
             },
             {
               table: {
@@ -218,9 +218,9 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
             },
             {
               text: 'SCORING CRITERIA: Very Good:- 5, Good:- 4, Average:- 3, Need Improvement:- 2, Inadequate:- 1',
-              fontSize: 9,
+              fontSize: 7.5,
               italic: true,
-              margin: [0, 5, 0, 5]
+              margin: [0, 3, 0, 3]
             },
             {
               table: {
@@ -243,7 +243,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   ])
                 ]
               },
-              margin: [0, 0, 0, 10]
+              margin: [0, 0, 0, 8]
             },
             {
               table: {
@@ -252,7 +252,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   [{ text: 'C', bold: true, fillColor: '#f1f5f9' }, { text: 'CONTRACTOR COMPETENCE & TRAINING', bold: true, fillColor: '#f1f5f9' }]
                 ]
               },
-              margin: [0, 0, 0, 5]
+              margin: [0, 0, 0, 3]
             },
             {
               table: {
@@ -275,7 +275,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   ])
                 ]
               },
-              margin: [0, 0, 0, 10]
+              margin: [0, 0, 0, 8]
             },
             {
               table: {
@@ -283,21 +283,21 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                 body: [
                   [
                     { text: 'OVERALL RATING (Inadequate: 0-60, Deficient: 61-75, Good: 76-90, Superior: 91-100)', bold: true, alignment: 'left', fillColor: '#f8fafc' },
-                    { text: `${overallScore}% — ${ratingInfo.label}`, bold: true, alignment: 'center', color: '#1e3a8a', fontSize: 12 }
+                    { text: `${overallScore}% — ${ratingInfo.label}`, bold: true, alignment: 'center', color: '#1e3a8a', fontSize: 10 }
                   ]
                 ]
               },
-              margin: [0, 0, 0, 10]
+              margin: [0, 0, 0, 8]
             },
             {
               table: {
                 widths: ['*'],
                 body: [
                   [{ text: 'Overall Feedback:', bold: true, border: [true, true, true, false] }],
-                  [{ text: formData.overallFeedback || 'No feedback provided.', margin: [10, 5, 0, 15], border: [true, false, true, true] }]
+                  [{ text: formData.overallFeedback || 'No feedback provided.', margin: [10, 3, 0, 10], border: [true, false, true, true] }]
                 ]
               },
-              margin: [0, 0, 0, 20]
+              margin: [0, 0, 0, 15]
             },
             {
               table: {
@@ -307,25 +307,25 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   [
                     {
                       stack: [
-                        { text: 'Safety Manager (Signature & Title)', bold: true, fontSize: 9 },
-                        { text: formData.safetyManager || '____________________', margin: [0, 15, 0, 0], bold: true, fontSize: 11 }
+                        { text: 'Safety Manager (Signature & Title)', bold: true, fontSize: 7.5 },
+                        { text: formData.safetyManager || '____________________', margin: [0, 10, 0, 0], bold: true, fontSize: 9 }
                       ],
-                      padding: [5, 10, 5, 10]
+                      padding: [5, 6, 5, 6]
                     },
                     {
                       stack: [
-                        { text: 'Department In charge (Signature & Title)', bold: true, fontSize: 9 },
-                        { text: formData.deptInCharge || '____________________', margin: [0, 15, 0, 0], bold: true, fontSize: 11 }
+                        { text: 'Department In charge (Signature & Title)', bold: true, fontSize: 7.5 },
+                        { text: formData.deptInCharge || '____________________', margin: [0, 10, 0, 0], bold: true, fontSize: 9 }
                       ],
-                      padding: [5, 10, 5, 10]
+                      padding: [5, 6, 5, 6]
                     }
                   ]
                 ]
               },
-              margin: [0, 0, 0, 30]
+              margin: [0, 0, 0, 20]
             },
             {
-              canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.5 }]
+              canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.2 }]
             },
             {
               columns: [
@@ -336,16 +336,16 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                     'REVISION DATE: 01.08.2024'
                   ],
                   bold: true,
-                  fontSize: 9,
-                  margin: [0, 10, 0, 0]
+                  fontSize: 7.5,
+                  margin: [0, 8, 0, 0]
                 },
                 {
                   text: '“CLASSIFIED – CONFIDENTIAL FOR INTERNAL USE ONLY”',
                   alignment: 'right',
                   bold: true,
                   italic: true,
-                  fontSize: 10,
-                  margin: [0, 20, 0, 0]
+                  fontSize: 8,
+                  margin: [0, 15, 0, 0]
                 }
               ]
             }
@@ -368,16 +368,16 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
       // Improved Word export with MSO metadata for better compatibility
       const style = `
         <style>
-          @page { margin: 1in; }
-          body { font-family: 'Arial', sans-serif; font-size: 10pt; line-height: 1.2; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; table-layout: fixed; }
-          th, td { border: 2pt solid black; padding: 6pt; font-size: 10pt; text-align: left; word-wrap: break-word; }
+          @page { margin: 0.5in; }
+          body { font-family: 'Arial', sans-serif; font-size: 8pt; line-height: 1.1; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed; }
+          th, td { border: 2pt solid black; padding: 4pt; font-size: 8pt; text-align: left; word-wrap: break-word; }
           .header-table td { border: none; }
           .section-header { background-color: #f1f5f9; font-weight: bold; }
           .sub-header { background-color: #f8fafc; font-weight: bold; }
           .title { text-align: center; font-weight: bold; }
-          .footer { margin-top: 50px; font-size: 9pt; font-weight: bold; border-top: 2pt solid black; padding-top: 10px; }
-          .score-box { font-size: 14pt; color: #1e3a8a; text-align: center; font-weight: bold; }
+          .footer { margin-top: 30px; font-size: 7.5pt; font-weight: bold; border-top: 2pt solid black; padding-top: 8px; }
+          .score-box { font-size: 11pt; color: #1e3a8a; text-align: center; font-weight: bold; }
         </style>
       `;
       
@@ -391,9 +391,9 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
           <tr>
             <td width="20%"><b>REVISION NO. 01</b></td>
             <td width="60%" class="title">
-              <div style="font-size: 12pt;">BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA</div>
+              <div style="font-size: 10pt;">BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA</div>
               <div>CONTRACTOR PERFORMANCE EVALUATION REPORT FORM</div>
-              <div>BAIL-S-110-FRM-01-00-00-04</div>
+              <div style="font-size: 8.5pt;">BAIL-S-110-FRM-01-00-00-04</div>
             </td>
             <td width="20%"></td>
           </tr>
