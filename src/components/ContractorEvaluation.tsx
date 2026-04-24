@@ -651,23 +651,60 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
       </nav>
 
       {/* Form Content */}
-      <main className="max-w-5xl mx-auto px-6 py-12 space-y-12">
+      <motion.main 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="max-w-5xl mx-auto px-6 py-12 space-y-12"
+      >
         
         {/* Company Header Card */}
-        <div className="bg-white p-12 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-900/5 relative overflow-hidden text-center">
-           <div className="absolute top-0 right-0 p-8">
-             <div className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-black text-slate-400 tracking-widest">REVISION NO. 01</div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+          className="bg-white/80 backdrop-blur-2xl p-12 rounded-[2.5rem] border border-white shadow-2xl shadow-slate-900/10 relative overflow-hidden text-center group hover:scale-[1.01] transition-all duration-500"
+        >
+           {/* Decorative background effects */}
+           <div className="absolute -top-24 -left-24 w-64 h-64 bg-red-400/10 rounded-full blur-3xl group-hover:bg-red-400/20 transition-colors" />
+           <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl group-hover:bg-blue-400/20 transition-colors" />
+           
+           <div className="flex items-center justify-between gap-4 mb-8">
+             <div className="w-24 h-12 flex items-center justify-center grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
+               <img 
+                 src="https://upload.wikimedia.org/wikipedia/commons/c/ce/Coca-Cola_logo.svg" 
+                 alt="Coca-Cola Logo" 
+                 className="max-h-full"
+                 referrerPolicy="no-referrer"
+               />
+             </div>
+             <div className="px-5 py-2 bg-slate-900 text-white rounded-full text-[9px] font-black tracking-widest uppercase shadow-lg">REVISION NO. 01</div>
+             <div className="w-24 h-12 flex items-center justify-center grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
+               <img 
+                 src="https://upload.wikimedia.org/wikipedia/en/b/ba/Thums_Up_logo.png" 
+                 alt="Thums Up Logo" 
+                 className="max-h-full"
+                 referrerPolicy="no-referrer"
+               />
+             </div>
            </div>
-           <h2 className="text-xl md:text-2xl font-display font-black text-slate-900 tracking-tight uppercase leading-tight">
+
+           <h2 className="text-2xl md:text-3xl font-display font-black text-slate-900 tracking-tight uppercase leading-tight">
              BRINDAVAN AGRO INDUSTRIES PVT LTD <br/>
              <span className="text-slate-400">CHHATA, MATHURA</span>
            </h2>
-           <div className="h-1 w-24 bg-[#16a34a] mx-auto mt-6 rounded-full" />
-           <p className="mt-6 text-sm font-black text-[#16a34a] tracking-[0.4em] uppercase">CONTRACTOR PERFORMANCE EVALUATION REPORT FORM</p>
+           <div className="h-1.5 w-32 bg-[#16a34a] mx-auto mt-8 rounded-full shadow-lg shadow-green-200" />
+           <p className="mt-8 text-xs font-black text-[#16a34a] tracking-[0.5em] uppercase">CONTRACTOR PERFORMANCE EVALUATION REPORT FORM</p>
         </div>
 
         {/* Section A: Contractor Details */}
-        <div className="space-y-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3 }}
+          className="space-y-6"
+        >
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-black text-sm">A</div>
             <h3 className="text-xs font-black uppercase tracking-[0.25em] text-slate-900">Contractor Details</h3>
@@ -735,10 +772,16 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Section B: Safety Management System */}
-        <div className="space-y-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4 }}
+          className="space-y-6"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600 font-black text-sm">B</div>
@@ -806,10 +849,16 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                </table>
              </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Section C: Competence & Training */}
-        <div className="space-y-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.5 }}
+          className="space-y-6"
+        >
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 font-black text-sm">C</div>
             <h3 className="text-xs font-black uppercase tracking-[0.25em] text-slate-900">Contractor Competence & Training</h3>
@@ -872,10 +921,16 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                </table>
              </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Footer: Feedback & Signatures */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.6 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-8"
+        >
            <div className="md:col-span-2 space-y-4">
               <div className="flex items-center gap-3 ml-1">
                 <Info size={16} className="text-slate-400" />
@@ -922,9 +977,9 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                  </p>
               </div>
            </div>
-        </div>
+        </motion.div>
 
-      </main>
+      </motion.main>
 
       {/* Official Print Layout */}
       {/* ... keeping previous logic ... */}      {/* History Modal */}
