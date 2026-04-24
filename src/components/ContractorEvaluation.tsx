@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect, MouseEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, ArrowLeft, Save, Printer, CheckCircle2, AlertCircle, Info, Check, Download, FileText, ChevronDown, Trash2, FolderOpen, X, Clock } from 'lucide-react';
+import { Shield, ArrowLeft, Save, Printer, CheckCircle2, AlertCircle, Info, Check, Download, FileText, ChevronDown, Trash2, FolderOpen, X, Clock, Frown, Meh, Smile } from 'lucide-react';
 import { Language } from '../types';
 import { safeStorage } from '../lib/storage';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import pdfMake from "pdfmake/build/pdfmake";
 import * as pdfFonts from "pdfmake/build/vfs_fonts";
-import { PieChart, Pie, Cell, ResponsiveContainer, Text } from 'recharts';
 
 // Initialize pdfMake fonts with robust check for different build environments
 if (pdfFonts && (pdfFonts as any).pdfMake) {
@@ -29,60 +28,12 @@ interface EvaluationRow {
   comments: string;
 }
 
-// Gauge Component for Score Visualization
-const GaugeChart = ({ score, label }: { score: number; label: string }) => {
-  const data = [
-    { name: 'Score', value: score },
-    { name: 'Remaining', value: 100 - score },
-  ];
-  
-  const getColor = (val: number) => {
-    if (val >= 91) return '#16a34a'; // Superior
-    if (val >= 76) return '#2563eb'; // Good
-    if (val >= 61) return '#eab308'; // Fair
-    return '#ef4444'; // Deficient
-  };
-
-  return (
-    <div className="w-full h-40">
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="85%"
-            startAngle={180}
-            endAngle={0}
-            innerRadius={60}
-            outerRadius={85}
-            paddingAngle={0}
-            dataKey="value"
-          >
-            <Cell fill={getColor(score)} />
-            <Cell fill="#f1f5f9" />
-          </Pie>
-          <Text
-            x="50%"
-            y="70%"
-            textAnchor="middle"
-            dominantBaseline="middle"
-            className="text-2xl font-black fill-slate-900"
-          >
-            {`${score}%`}
-          </Text>
-          <Text
-            x="50%"
-            y="94%"
-            textAnchor="middle"
-            dominantBaseline="middle"
-            className="text-[10px] font-black fill-slate-400 uppercase tracking-widest"
-          >
-            {label}
-          </Text>
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
-  );
+const RATING_CONFIG: Record<number, { label: string; color: string; bgColor: string; textColor: string; icon: any }> = {
+  1: { label: 'Very Dissatisfied', color: '#ef4444', bgColor: 'bg-red-50', textColor: 'text-red-500', icon: Frown },
+  2: { label: 'Dissatisfied', color: '#f97316', bgColor: 'bg-orange-50', textColor: 'text-orange-500', icon: Meh },
+  3: { label: 'Neutral', color: '#eab308', bgColor: 'bg-yellow-50', textColor: 'text-yellow-500', icon: Meh },
+  4: { label: 'Satisfied', color: '#84cc16', bgColor: 'bg-lime-50', textColor: 'text-lime-500', icon: Smile },
+  5: { label: 'Very Satisfied', color: '#22c55e', bgColor: 'bg-green-50', textColor: 'text-green-500', icon: Smile }
 };
 
 export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluationProps) {
@@ -227,11 +178,29 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
   };
 
   const updateSafetyMetric = (id: number, field: keyof EvaluationRow, value: any) => {
-    setSafetyMetrics(prev => prev.map(m => m.id === id ? { ...m, [field]: value } : m));
+    setSafetyMetrics(prev => prev.map(m => {
+      if (m.id === id) {
+        const update = { ...m, [field]: value };
+        if (field === 'rating' && value && RATING_CONFIG[value as number]) {
+          update.comments = RATING_CONFIG[value as number].label;
+        }
+        return update;
+      }
+      return m;
+    }));
   };
 
   const updateCompetenceMetric = (id: number, field: keyof EvaluationRow, value: any) => {
-    setCompetenceMetrics(prev => prev.map(m => m.id === id ? { ...m, [field]: value } : m));
+    setCompetenceMetrics(prev => prev.map(m => {
+      if (m.id === id) {
+        const update = { ...m, [field]: value };
+        if (field === 'rating' && value && RATING_CONFIG[value as number]) {
+          update.comments = RATING_CONFIG[value as number].label;
+        }
+        return update;
+      }
+      return m;
+    }));
   };
 
   const handleDownload = async (format: 'pdf' | 'doc') => {
@@ -249,18 +218,18 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
           content: [
             {
               columns: [
-                { text: 'REVISION NO. 01', bold: true, fontSize: 7, width: '25%' },
+                { text: 'REVISION NO. 01', bold: true, fontSize: 8, width: '25%' },
                 {
                   stack: [
-                    { text: 'BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA', alignment: 'center', bold: true, fontSize: 11 },
-                    { text: 'CONTRACTOR PERFORMANCE EVALUATION REPORT FORM', alignment: 'center', bold: true, fontSize: 10, margin: [0, 1] },
-                    { text: 'BAIL-S-110-FRM-01-00-00-04', alignment: 'center', bold: true, fontSize: 9 }
+                    { text: 'BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA', alignment: 'center', bold: true, fontSize: 10 },
+                    { text: 'CONTRACTOR PERFORMANCE EVALUATION REPORT FORM', alignment: 'center', bold: true, fontSize: 9, margin: [0, 1] },
+                    { text: 'BAIL-S-110-FRM-01-00-00-04', alignment: 'center', bold: true, fontSize: 8 }
                   ],
                   width: '50%'
                 },
                 { text: '', width: '25%' }
               ],
-              margin: [0, 0, 0, 6]
+              margin: [0, 0, 0, 10]
             },
             {
               table: {
@@ -279,33 +248,21 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                       { text: formData.workDescription || '-' }
                     ]
                   }],
-                  ['3', {
-                    columns: [
-                      { text: 'LOTO Mode assigned for task:', bold: true, width: '40%' },
-                      { text: `MODE ${formData.lotoMode || '-'}${formData.lotoMode === '5' ? ' (PERMIT TO WORK - HIGH RISK)' : ''}`, bold: true, color: formData.lotoMode === '5' ? '#ef4444' : '#000' }
-                    ]
-                  }],
                   ...(formData.lotoMode === '5' ? [
-                    ['4', {
+                    ['3', {
                       columns: [
                         { text: 'PTW Control Number:', bold: true, width: '40%' },
                         { text: formData.ptwNumber || '', bold: true }
                       ]
                     }],
-                    ['5', {
+                    ['4', {
                       columns: [
                         { text: 'SME Supervisor (Live Work):', bold: true, width: '40%' },
                         { text: formData.ptwSme || '', bold: true }
                       ]
                     }]
                   ] : []),
-                  [formData.lotoMode === '5' ? '6' : '4', {
-                    columns: [
-                      { text: 'LOTO Decision Path / Justification:', bold: true, width: '40%' },
-                      { text: formData.decisionPath || '-', fontSize: 8.5 }
-                    ]
-                  }],
-                  [formData.lotoMode === '5' ? '7' : '5', {
+                  [formData.lotoMode === '5' ? '5' : '3', {
                     columns: [
                       { text: 'Project Completion', bold: true, width: '40%' },
                       { text: 'SCHEDULED:', margin: [0, 0, 5, 0], bold: true },
@@ -316,7 +273,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   }]
                 ]
               },
-              margin: [0, 0, 0, 8]
+              margin: [0, 0, 0, 10]
             },
             {
               table: {
@@ -329,14 +286,14 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
             },
             {
               text: 'SCORING CRITERIA: Very Good:- 5, Good:- 4, Average:- 3, Need Improvement:- 2, Inadequate:- 1',
-              fontSize: 8.5,
+              fontSize: 9,
               italic: true,
-              margin: [0, 2, 0, 2]
+              margin: [0, 4, 0, 4]
             },
             {
               table: {
                 headerRows: 1,
-                widths: [25, '*', 60, 40, 80],
+                widths: [25, '*', 65, 45, 85],
                 body: [
                   [
                     { text: 'S.NO.', bold: true, alignment: 'center', fillColor: '#f8fafc' },
@@ -350,11 +307,11 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                     { text: m.parameter, fontSize: 9 },
                     { text: m.evaluated || '-', alignment: 'center' },
                     { text: (m.rating || '-').toString(), alignment: 'center', bold: true },
-                    { text: m.comments || '-', fontSize: 8.5 }
+                    { text: m.comments || '-', fontSize: 9 }
                   ])
                 ]
               },
-              margin: [0, 0, 0, 5]
+              margin: [0, 0, 0, 8]
             },
             {
               table: {
@@ -363,12 +320,12 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   [{ text: 'C', bold: true, fillColor: '#f1f5f9' }, { text: 'CONTRACTOR COMPETENCE & TRAINING', bold: true, fillColor: '#f1f5f9' }]
                 ]
               },
-              margin: [0, 0, 0, 2]
+              margin: [0, 0, 0, 5]
             },
             {
               table: {
                 headerRows: 1,
-                widths: [25, '*', 50, 35, 75],
+                widths: [25, '*', 60, 40, 80],
                 body: [
                   [
                     { text: 'S.NO.', bold: true, alignment: 'center', fillColor: '#f8fafc' },
@@ -382,33 +339,33 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                     { text: m.parameter, fontSize: 9 },
                     { text: m.evaluated || '-', alignment: 'center' },
                     { text: (m.rating || '-').toString(), alignment: 'center', bold: true },
-                    { text: m.comments || '-', fontSize: 8.5 }
+                    { text: m.comments || '-', fontSize: 9 }
                   ])
                 ]
               },
-              margin: [0, 0, 0, 6]
+              margin: [0, 0, 0, 10]
             },
             {
               table: {
-                widths: ['*', 100],
+                widths: ['*', 120],
                 body: [
                   [
-                    { text: 'OVERALL RATING (Inadequate: 0-60, Deficient: 61-75, Good: 76-90, Superior: 91-100)', bold: true, alignment: 'left', fillColor: '#f8fafc' },
-                    { text: `${overallScore}% — ${ratingInfo.label}`, bold: true, alignment: 'center', color: '#1e3a8a', fontSize: 11 }
+                    { text: 'OVERALL RATING (Inadequate: 0-60, Deficient: 61-75, Good: 76-90, Superior: 91-100)', bold: true, alignment: 'left', fillColor: '#f8fafc', fontSize: 8 },
+                    { text: `${overallScore}% — ${ratingInfo.label}`, bold: true, alignment: 'center', color: '#1e3a8a', fontSize: 10 }
                   ]
                 ]
               },
-              margin: [0, 0, 0, 5]
+              margin: [0, 0, 0, 8]
             },
             {
               table: {
                 widths: ['*'],
                 body: [
                   [{ text: 'Overall Feedback:', bold: true, border: [true, true, true, false] }],
-                  [{ text: formData.overallFeedback || 'No feedback provided.', margin: [5, 2, 0, 5], fontSize: 8.5, border: [true, false, true, true] }]
+                  [{ text: formData.overallFeedback || 'No feedback provided.', margin: [5, 4, 0, 8], fontSize: 9, border: [true, false, true, true] }]
                 ]
               },
-              margin: [0, 0, 0, 8]
+              margin: [0, 0, 0, 12]
             },
             {
               table: {
@@ -418,25 +375,25 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   [
                     {
                       stack: [
-                        { text: 'Safety Manager (Signature & Title)', bold: true, fontSize: 8.5 },
-                        { text: formData.safetyManager || '____________________', margin: [0, 6, 0, 0], bold: true, fontSize: 10 }
+                        { text: 'Safety Manager (Signature & Title)', bold: true, fontSize: 8 },
+                        { text: formData.safetyManager || '____________________', margin: [0, 8, 0, 0], bold: true, fontSize: 9 }
                       ],
-                      padding: [5, 4, 5, 4]
+                      padding: [5, 6, 5, 6]
                     },
                     {
                       stack: [
-                        { text: 'Department In charge (Signature & Title)', bold: true, fontSize: 8.5 },
-                        { text: formData.deptInCharge || '____________________', margin: [0, 6, 0, 0], bold: true, fontSize: 10 }
+                        { text: 'Department In charge (Signature & Title)', bold: true, fontSize: 8 },
+                        { text: formData.deptInCharge || '____________________', margin: [0, 8, 0, 0], bold: true, fontSize: 9 }
                       ],
-                      padding: [5, 4, 5, 4]
+                      padding: [5, 6, 5, 6]
                     }
                   ]
                 ]
               },
-              margin: [0, 0, 0, 10]
+              margin: [0, 0, 0, 15]
             },
             {
-              canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1 }]
+              canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.5 }]
             },
             {
               columns: [
@@ -448,15 +405,15 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   ],
                   bold: true,
                   fontSize: 8,
-                  margin: [0, 4, 0, 0]
+                  margin: [0, 5, 0, 0]
                 },
                 {
                   text: '“CLASSIFIED – CONFIDENTIAL FOR INTERNAL USE ONLY”',
                   alignment: 'right',
                   bold: true,
                   italic: true,
-                  fontSize: 8.5,
-                  margin: [0, 8, 0, 0]
+                  fontSize: 8,
+                  margin: [0, 10, 0, 0]
                 }
               ]
             }
@@ -480,15 +437,15 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
       const style = `
         <style>
           @page { margin: 0.5in; }
-          body { font-family: 'Arial', sans-serif; font-size: 8pt; line-height: 1.1; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed; }
-          th, td { border: 2pt solid black; padding: 4pt; font-size: 8pt; text-align: left; word-wrap: break-word; }
+          body { font-family: 'Arial', sans-serif; font-size: 9pt; line-height: 1.2; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: fixed; }
+          th, td { border: 2pt solid black; padding: 5pt; font-size: 9pt; text-align: left; word-wrap: break-word; }
           .header-table td { border: none; }
           .section-header { background-color: #f1f5f9; font-weight: bold; }
           .sub-header { background-color: #f8fafc; font-weight: bold; }
           .title { text-align: center; font-weight: bold; }
-          .footer { margin-top: 30px; font-size: 7.5pt; font-weight: bold; border-top: 2pt solid black; padding-top: 8px; }
-          .score-box { font-size: 11pt; color: #1e3a8a; text-align: center; font-weight: bold; }
+          .footer { margin-top: 30px; font-size: 8.5pt; font-weight: bold; border-top: 2pt solid black; padding-top: 10px; }
+          .score-box { font-size: 10pt; color: #1e3a8a; text-align: center; font-weight: bold; }
         </style>
       `;
       
@@ -502,9 +459,9 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
           <tr>
             <td width="20%"><b>REVISION NO. 01</b></td>
             <td width="60%" class="title">
-              <div style="font-size: 10pt;">BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA</div>
+              <div style="font-size: 9pt;">BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA</div>
               <div>CONTRACTOR PERFORMANCE EVALUATION REPORT FORM</div>
-              <div style="font-size: 8.5pt;">BAIL-S-110-FRM-01-00-00-04</div>
+              <div style="font-size: 8pt;">BAIL-S-110-FRM-01-00-00-04</div>
             </td>
             <td width="20%"></td>
           </tr>
@@ -523,25 +480,17 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
             <td width="30">2</td>
             <td><b>Brief Description of work undertaken:</b><br/>${formData.workDescription || '-'}</td>
           </tr>
-          <tr>
-            <td width="30">3</td>
-            <td><b>LOTO Mode assigned for task:</b> MODE ${formData.lotoMode || '-'}${formData.lotoMode === '5' ? ' (PERMIT TO WORK)' : ''}</td>
-          </tr>
           ${formData.lotoMode === '5' ? `
           <tr>
-            <td width="30">4</td>
+            <td width="30">3</td>
             <td><b>PTW Control Number:</b> ${formData.ptwNumber || ''}</td>
           </tr>
           <tr>
-            <td width="30">5</td>
+            <td width="30">4</td>
             <td><b>SME Supervisor (Live Work):</b> ${formData.ptwSme || ''}</td>
           </tr>
           <tr>
-            <td width="30">6</td>
-            <td><b>LOTO Decision Path / Justification:</b><br/>${formData.decisionPath || '-'}</td>
-          </tr>
-          <tr>
-            <td width="30">7</td>
+            <td width="30">5</td>
             <td>
               <table style="border: none; margin: 0;">
                 <tr style="border: none;">
@@ -554,11 +503,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
           </tr>
           ` : `
           <tr>
-            <td width="30">4</td>
-            <td><b>LOTO Decision Path / Justification:</b><br/>${formData.decisionPath || '-'}</td>
-          </tr>
-          <tr>
-            <td width="30">5</td>
+            <td width="30">3</td>
             <td>
               <table style="border: none; margin: 0;">
                 <tr style="border: none;">
@@ -810,422 +755,327 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
         className="max-w-5xl mx-auto px-6 py-12 space-y-12"
       >
         
-        {/* Company Header Card */}
+        {/* Main Document Body - Single Border Container */}
         <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="bg-white/80 backdrop-blur-2xl p-12 rounded-[2.5rem] border border-white shadow-2xl shadow-slate-900/10 relative overflow-hidden text-center group hover:scale-[1.01] transition-all duration-500"
+          className="bg-white border-4 border-slate-900 rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
         >
-           {/* Decorative background effects */}
-           <div className="absolute -top-24 -left-24 w-64 h-64 bg-red-400/20 rounded-full blur-3xl group-hover:bg-red-400/30 transition-colors animate-pulse" />
-           <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl group-hover:bg-blue-400/30 transition-colors animate-pulse" style={{ animationDelay: '1s' }} />
-           
-           <div className="flex items-center justify-between gap-4 mb-8">
-             <motion.div 
-               whileHover={{ scale: 1.1, rotate: 5 }}
-               className="w-24 h-12 flex items-center justify-center grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all cursor-pointer bg-white/50 rounded-xl p-2 backdrop-blur-sm shadow-sm"
-             >
-               <img 
-                 src="https://upload.wikimedia.org/wikipedia/commons/c/ce/Coca-Cola_logo.svg" 
-                 alt="Coca-Cola Logo" 
-                 className="max-h-full"
-                 referrerPolicy="no-referrer"
-               />
-               <span className="absolute -bottom-6 text-[9px] font-black text-slate-500 uppercase tracking-tighter bg-white shadow-sm px-2 py-0.5 rounded-full border border-slate-100">TREXSE</span>
-             </motion.div>
-
-             <div className="px-5 py-2 bg-slate-900 text-white rounded-full text-[9px] font-black tracking-widest uppercase shadow-lg shadow-slate-900/20 border border-white/20">REVISION NO. 01</div>
-
-             <motion.div 
-               whileHover={{ scale: 1.1, rotate: -5 }}
-               className="w-24 h-12 flex items-center justify-center grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all cursor-pointer bg-white/50 rounded-xl p-2 backdrop-blur-sm shadow-sm relative"
-             >
-               <img 
-                 src="https://upload.wikimedia.org/wikipedia/en/b/ba/Thums_Up_logo.png" 
-                 alt="Thums Up Logo" 
-                 className="max-h-full"
-                 referrerPolicy="no-referrer"
-               />
-               <span className="absolute -bottom-6 text-[9px] font-black text-slate-500 uppercase tracking-tighter bg-white shadow-sm px-2 py-0.5 rounded-full border border-slate-100">TWEO</span>
-             </motion.div>
-           </div>
-
-           <h2 className="text-2xl md:text-3xl font-display font-black text-slate-900 tracking-tight uppercase leading-tight">
-             BRINDAVAN AGRO INDUSTRIES PVT LTD <br/>
-             <span className="text-slate-400">CHHATA, MATHURA</span>
-           </h2>
-           <div className="h-1.5 w-32 bg-[#16a34a] mx-auto mt-8 rounded-full shadow-lg shadow-green-200" />
-           <p className="mt-8 text-xs font-black text-[#16a34a] tracking-[0.5em] uppercase">CONTRACTOR PERFORMANCE EVALUATION REPORT FORM</p>
-        </motion.div>
-
-        {/* Section A: Contractor Details */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-          className="space-y-6"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-500 text-white shadow-lg shadow-blue-500/20 flex items-center justify-center font-black text-sm">A</div>
-            <h3 className="text-xs font-black uppercase tracking-[0.25em] text-slate-900">Contractor Details</h3>
-          </div>
-          
-          <div className="bg-white/70 backdrop-blur-md rounded-[2.5rem] border border-white shadow-xl p-10 grid grid-cols-1 md:grid-cols-2 gap-10 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-blue-100 transition-colors" />
+          {/* Form Header Area (Inside Border) */}
+          <div className="p-10 border-b-4 border-slate-900 relative overflow-hidden group">
+            <div className="absolute -top-24 -left-24 w-64 h-64 bg-red-400/10 rounded-full blur-3xl group-hover:bg-red-400/20 transition-colors animate-pulse" />
+            <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl group-hover:bg-blue-400/20 transition-colors animate-pulse" style={{ animationDelay: '1s' }} />
             
-            <div className="space-y-8 relative z-10">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Contract Company / Business Name</label>
-                <div className="relative group/input">
-                   <div className="absolute inset-0 bg-blue-500/5 rounded-2xl blur-lg opacity-0 group-focus-within/input:opacity-100 transition-opacity" />
-                   <input 
+            <div className="flex items-start justify-between gap-4 mb-10 relative z-10">
+              <div className="flex items-center gap-6 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100">
+                <img 
+                  src="https://slmgbeverages.com/wp-content/uploads/2023/12/SLMG-Logo-1.png" 
+                  alt="SLMG Logo" 
+                  className="h-10 w-auto object-contain"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="h-8 w-px bg-slate-200" />
+                <img 
+                  src="https://media.licdn.com/dms/image/C4D0BAQF_Jp0qZ_9zpw/company-logo_200_200/0/1630576356748?e=2147483647&v=beta&t=7q_0D9y9M0v9p9p9p9p9p9p9"
+                  alt="BAIL Logo" 
+                  className="h-10 w-auto object-contain"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+
+              <div className="text-right flex flex-col items-end">
+                <div className="px-5 py-2 bg-slate-900 text-white rounded-full text-[9px] font-black tracking-widest uppercase mb-4">REVISION NO. 01</div>
+                <div className="text-[10px] font-black tracking-widest text-[#16a34a] uppercase">BAIL-S-110-FRM-01-00-00-04</div>
+              </div>
+            </div>
+
+            <div className="text-center relative z-10">
+              <h2 className="text-2xl md:text-3xl font-display font-black text-slate-900 tracking-tight uppercase leading-tight">
+                BRINDAVAN AGRO INDUSTRIES PVT LTD <br/>
+                <span className="text-slate-400">CHHATA, MATHURA</span>
+              </h2>
+              <div className="h-1.5 w-32 bg-[#16a34a] mx-auto mt-6 rounded-full shadow-lg shadow-green-200" />
+              <p className="mt-6 text-xs font-black text-[#16a34a] tracking-[0.4em] uppercase">CONTRACTOR PERFORMANCE EVALUATION REPORT FORM</p>
+            </div>
+          </div>
+
+          <div className="divide-y-4 divide-slate-900">
+            {/* Section A: Contractor Details (Row) */}
+            <div className="p-10 space-y-8 bg-white">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white shadow-lg flex items-center justify-center font-black text-sm">A</div>
+                <h3 className="text-xs font-black uppercase tracking-[0.25em] text-slate-900">Contractor Details</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Contract Company / Business Name</label>
+                  <input 
                     type="text" 
-                    className="w-full h-16 bg-slate-50/50 border-2 border-slate-100 rounded-2xl px-6 font-bold text-slate-900 focus:border-[#2563eb] focus:bg-white outline-none transition-all placeholder:text-slate-200 relative z-10"
+                    className="w-full h-14 bg-slate-50/50 border-2 border-slate-100 rounded-2xl px-6 font-bold text-slate-900 focus:border-[#2563eb] focus:bg-white outline-none transition-all placeholder:text-slate-200"
                     placeholder="Enter company name..."
                     value={formData.contractCompany || ''}
                     onChange={e => setFormData({...formData, contractCompany: e.target.value})}
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Assigned LOTO Mode</label>
-                  <select 
-                    className="w-full h-16 bg-slate-50/50 border-2 border-slate-100 rounded-2xl px-6 font-bold text-slate-900 focus:border-[#2563eb] focus:bg-white outline-none transition-all cursor-pointer"
-                    value={formData.lotoMode || '1'}
-                    onChange={e => setFormData({...formData, lotoMode: e.target.value as any})}
-                  >
-                    <option value="1">MODE 01 — Simple LOTO</option>
-                    <option value="2">MODE 02 — Group LOTO</option>
-                    <option value="3">MODE 03 — Multi-Source LOTO</option>
-                    <option value="4">MODE 04 — Specific SOP</option>
-                    <option value="5">MODE 05 — Permit to Work (LIVE)</option>
-                  </select>
-                </div>
-
-                {formData.lotoMode === '5' && (
-                  <motion.div 
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="space-y-3"
-                  >
-                    <label className="text-[10px] font-black uppercase tracking-widest text-red-500 ml-1">PTW Control Number</label>
-                    <input 
-                      type="text" 
-                      className="w-full h-16 bg-red-50/30 border-2 border-red-100 rounded-2xl px-6 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all placeholder:text-slate-300"
-                      placeholder="e.g. PTW-2024-001"
-                      value={formData.ptwNumber || ''}
-                      onChange={e => setFormData({...formData, ptwNumber: e.target.value})}
-                    />
-                  </motion.div>
-                )}
-              </div>
-
-              {formData.lotoMode === '5' && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-3"
-                >
-                  <label className="text-[10px] font-black uppercase tracking-widest text-red-500 ml-1">SME Supervisor (Mandatory for Live Work)</label>
-                  <input 
-                    type="text" 
-                    className="w-full h-16 bg-red-50/30 border-2 border-red-100 rounded-2xl px-6 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all placeholder:text-slate-300"
-                    placeholder="Enter SME name..."
-                    value={formData.ptwSme || ''}
-                    onChange={e => setFormData({...formData, ptwSme: e.target.value})}
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Brief Description of contract work to be undertaken</label>
+                  <textarea 
+                    className="w-full h-28 bg-slate-50/50 border-2 border-slate-100 rounded-2xl p-4 font-bold text-slate-900 focus:border-[#2563eb] focus:bg-white outline-none transition-all resize-none placeholder:text-slate-200"
+                    placeholder="Describe the contract scope..."
+                    value={formData.workDescription || ''}
+                    onChange={e => setFormData({...formData, workDescription: e.target.value})}
                   />
-                </motion.div>
-              )}
-
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">LOTO Decision Path / Assessment Justification</label>
-                <input 
-                  type="text" 
-                  className="w-full h-16 bg-slate-50/50 border-2 border-slate-100 rounded-2xl px-6 font-bold text-slate-900 focus:border-[#2563eb] focus:bg-white outline-none transition-all placeholder:text-slate-200 relative z-10"
-                  placeholder="e.g. Q1(Y) -> Q2(N) -> Q3(Y) -> MODE 4"
-                  value={formData.decisionPath || ''}
-                  onChange={e => setFormData({...formData, decisionPath: e.target.value})}
-                />
+                </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Brief Description of work undertaken</label>
-                <textarea 
-                  className="w-full h-40 bg-slate-50/50 border-2 border-slate-100 rounded-2xl p-6 font-bold text-slate-900 focus:border-[#2563eb] focus:bg-white outline-none transition-all resize-none placeholder:text-slate-200"
-                  placeholder="Describe the contract scope..."
-                  value={formData.workDescription || ''}
-                  onChange={e => setFormData({...formData, workDescription: e.target.value})}
-                />
+              <div className="p-6 bg-[#f8fafc] border-2 border-slate-200 rounded-3xl">
+                <div className="flex flex-col md:flex-row items-center gap-8">
+                  <div className="flex items-center gap-4 md:w-1/3">
+                    <div className="w-10 h-10 rounded-xl bg-white border-2 border-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
+                      <Clock size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-900">Project Completion</h4>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">Timeline monitoring</p>
+                    </div>
+                  </div>
+                  <div className="h-px md:h-12 w-full md:w-px bg-slate-200" />
+                  <div className="flex-1 grid grid-cols-2 gap-6 w-full">
+                    <div className="space-y-2">
+                       <label className="text-[9px] font-black uppercase tracking-tighter text-slate-400 ml-1">Scheduled Date</label>
+                       <input 
+                         type="date" 
+                         className="w-full h-12 bg-white border border-slate-200 rounded-xl px-4 text-xs font-bold focus:border-blue-500 outline-none transition-all"
+                         value={formData.projectCompletion?.scheduled || ''}
+                         onChange={e => setFormData({...formData, projectCompletion: { ...formData.projectCompletion, scheduled: e.target.value }})}
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[9px] font-black uppercase tracking-tighter text-slate-400 ml-1">Actual Date</label>
+                       <input 
+                         type="date" 
+                         className="w-full h-12 bg-white border border-slate-200 rounded-xl px-4 text-xs font-bold focus:border-blue-500 outline-none transition-all"
+                         value={formData.projectCompletion?.actual || ''}
+                         onChange={e => setFormData({...formData, projectCompletion: { ...formData.projectCompletion, actual: e.target.value }})}
+                       />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-8 relative z-10">
-               <div className="p-8 bg-slate-50/50 border border-slate-100 rounded-[2rem] space-y-6">
-                 <div className="flex items-center gap-2">
-                   <Clock size={14} className="text-blue-500" />
-                   <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Project Timeline</h4>
-                 </div>
-                 <div className="grid grid-cols-2 gap-6">
-                   <div className="space-y-3">
-                     <label className="text-[9px] font-black uppercase tracking-tighter text-slate-400">Scheduled Date</label>
-                     <input 
-                       type="date" 
-                       className="w-full h-14 bg-white border border-slate-200 rounded-xl px-4 text-xs font-bold focus:border-[#2563eb] focus:shadow-lg focus:shadow-blue-500/10 outline-none transition-all"
-                       value={formData.projectCompletion?.scheduled || ''}
-                       onChange={e => setFormData({...formData, projectCompletion: { ...formData.projectCompletion, scheduled: e.target.value }})}
-                     />
-                   </div>
-                   <div className="space-y-3">
-                     <label className="text-[9px] font-black uppercase tracking-tighter text-slate-400">Actual Date</label>
-                     <input 
-                       type="date" 
-                       className="w-full h-14 bg-white border border-slate-200 rounded-xl px-4 text-xs font-bold focus:border-[#2563eb] focus:shadow-lg focus:shadow-blue-500/10 outline-none transition-all"
-                       value={formData.projectCompletion?.actual || ''}
-                       onChange={e => setFormData({...formData, projectCompletion: { ...formData.projectCompletion, actual: e.target.value }})}
-                     />
-                   </div>
-                 </div>
+            {/* Section B: Safety Management System (Row) */}
+            <div className="p-10 space-y-8 bg-white">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-[#16a34a] text-white shadow-lg flex items-center justify-center font-black text-sm">B</div>
+                  <h3 className="text-xs font-black uppercase tracking-[0.25em] text-slate-900">Safety Management System</h3>
+                </div>
+                <div className="flex items-center gap-3 px-4 py-2.5 bg-green-50 rounded-xl border border-green-100 text-[9px] font-black text-green-700 uppercase tracking-widest">
+                  <Info size={14} />
+                  Scoring Criteria: Very Good (5) to Inadequate (1)
+                </div>
+              </div>
+
+              <div className="border-4 border-slate-900 rounded-[2rem] overflow-hidden bg-white shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-slate-900 text-white">
+                        <th className="px-6 py-4 text-left text-[9px] font-black uppercase tracking-widest w-16">S.No</th>
+                        <th className="px-6 py-4 text-left text-[9px] font-black uppercase tracking-widest">Performance Parameters</th>
+                        <th className="px-6 py-4 text-center text-[9px] font-black uppercase tracking-widest w-40">Evaluated?</th>
+                        <th className="px-6 py-4 text-center text-[9px] font-black uppercase tracking-widest w-48">Rating</th>
+                        <th className="px-6 py-4 text-left text-[9px] font-black uppercase tracking-widest">Comments</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y-2 divide-slate-100">
+                      {safetyMetrics.map((row) => (
+                        <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-5 text-xs font-black text-slate-900 center-text border-r-2 border-slate-100">{row.id}</td>
+                          <td className="px-6 py-5 text-xs font-bold text-slate-700 leading-relaxed border-r-2 border-slate-100">{row.parameter}</td>
+                          <td className="px-6 py-5 border-r-2 border-slate-100">
+                            <div className="flex items-center justify-center gap-2">
+                              <button 
+                                onClick={() => updateSafetyMetric(row.id, 'evaluated', 'YES')}
+                                className={`w-12 py-1.5 rounded-lg text-[9px] font-black transition-all ${row.evaluated === 'YES' ? 'bg-[#16a34a] text-white shadow-md' : 'bg-slate-100 text-slate-400 hover:text-slate-600'}`}
+                              >YES</button>
+                              <button 
+                                onClick={() => updateSafetyMetric(row.id, 'evaluated', 'NO')}
+                                className={`w-12 py-1.5 rounded-lg text-[9px] font-black transition-all ${row.evaluated === 'NO' ? 'bg-red-500 text-white shadow-md' : 'bg-slate-100 text-slate-400 hover:text-slate-600'}`}
+                              >NO</button>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5 border-r-2 border-slate-100">
+                            <div className="flex items-center justify-center gap-1">
+                              {[1, 2, 3, 4, 5].map(v => (
+                                <button
+                                  key={v}
+                                  onClick={() => updateSafetyMetric(row.id, 'rating', v)}
+                                  className={`w-7 h-7 rounded-lg text-[10px] font-black transition-all flex items-center justify-center ${
+                                    row.rating === v 
+                                      ? 'bg-slate-900 text-white shadow-md scale-110' 
+                                      : 'bg-slate-50 text-slate-400 hover:bg-slate-200'
+                                  }`}
+                                >{v}</button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <input 
+                              type="text" 
+                              className="w-full h-9 bg-slate-50/50 border border-transparent rounded-lg px-3 text-[11px] font-bold text-slate-600 focus:bg-white focus:border-blue-300 outline-none transition-all"
+                              value={row.comments || ''}
+                              onChange={e => updateSafetyMetric(row.id, 'comments', e.target.value)}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Section C: Competence & Training (Row) */}
+            <div className="p-10 space-y-8 bg-white">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-purple-600 text-white shadow-lg flex items-center justify-center font-black text-sm">C</div>
+                <h3 className="text-xs font-black uppercase tracking-[0.25em] text-slate-900">Contractor Competence & Training</h3>
+              </div>
+
+              <div className="border-4 border-slate-900 rounded-[2rem] overflow-hidden bg-white shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-slate-900 text-white">
+                        <th className="px-6 py-4 text-left text-[9px] font-black uppercase tracking-widest w-16">S.No</th>
+                        <th className="px-6 py-4 text-left text-[9px] font-black uppercase tracking-widest">Performance Parameters</th>
+                        <th className="px-6 py-4 text-center text-[9px] font-black uppercase tracking-widest w-40">Evaluated?</th>
+                        <th className="px-6 py-4 text-center text-[9px] font-black uppercase tracking-widest w-48">Rating</th>
+                        <th className="px-6 py-4 text-left text-[9px] font-black uppercase tracking-widest">Comments</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y-2 divide-slate-100">
+                      {competenceMetrics.map((row) => (
+                        <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-5 text-xs font-black text-slate-900 center-text border-r-2 border-slate-100">{row.id}</td>
+                          <td className="px-6 py-5 text-xs font-bold text-slate-700 leading-relaxed border-r-2 border-slate-100">{row.parameter}</td>
+                          <td className="px-6 py-5 border-r-2 border-slate-100">
+                            <div className="flex items-center justify-center gap-2">
+                              <button 
+                                onClick={() => updateCompetenceMetric(row.id, 'evaluated', 'YES')}
+                                className={`w-12 py-1.5 rounded-lg text-[9px] font-black transition-all ${row.evaluated === 'YES' ? 'bg-[#16a34a] text-white shadow-md' : 'bg-slate-100 text-slate-400 hover:text-slate-600'}`}
+                              >YES</button>
+                              <button 
+                                onClick={() => updateCompetenceMetric(row.id, 'evaluated', 'NO')}
+                                className={`w-12 py-1.5 rounded-lg text-[9px] font-black transition-all ${row.evaluated === 'NO' ? 'bg-red-500 text-white shadow-md' : 'bg-slate-100 text-slate-400 hover:text-slate-600'}`}
+                              >NO</button>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5 border-r-2 border-slate-100">
+                            <div className="flex items-center justify-center gap-1">
+                              {[1, 2, 3, 4, 5].map(v => (
+                                <button
+                                  key={v}
+                                  onClick={() => updateCompetenceMetric(row.id, 'rating', v)}
+                                  className={`w-7 h-7 rounded-lg text-[10px] font-black transition-all flex items-center justify-center ${
+                                    row.rating === v 
+                                      ? 'bg-slate-900 text-white shadow-md scale-110' 
+                                      : 'bg-slate-50 text-slate-400 hover:bg-slate-200'
+                                  }`}
+                                >{v}</button>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <input 
+                              type="text" 
+                              className="w-full h-9 bg-slate-50/50 border border-transparent rounded-lg px-3 text-[11px] font-bold text-slate-600 focus:bg-white focus:border-blue-300 outline-none transition-all"
+                              value={row.comments || ''}
+                              onChange={e => updateCompetenceMetric(row.id, 'comments', e.target.value)}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Overall Rating & Feedback (Inside Border) */}
+            <div className="p-10 bg-slate-50 space-y-10">
+               <div className="flex flex-col md:flex-row items-stretch justify-between gap-8">
+                  <div className="flex-1 space-y-4">
+                    <div className="flex items-center gap-3 ml-2">
+                       <Info size={16} className="text-slate-400" />
+                       <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Overall Feedback</h4>
+                    </div>
+                    <textarea 
+                      className="w-full h-44 bg-white border-4 border-slate-900 rounded-[2rem] p-8 text-sm font-bold text-slate-900 focus:bg-blue-50/10 transition-all outline-none resize-none shadow-md"
+                      placeholder="Enter consolidated remarks..."
+                      value={formData.overallFeedback || ''}
+                      onChange={e => setFormData({...formData, overallFeedback: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="w-full md:w-80 flex flex-col items-center justify-center p-8 bg-white border-4 border-slate-900 rounded-[2rem] shadow-xl relative overflow-hidden group">
+                     <div className="absolute inset-0 bg-blue-500/5 group-hover:scale-110 transition-transform duration-700" />
+                     <div className="relative z-10 text-center">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block mb-4">Overall Score</span>
+                        <div className="text-6xl font-black text-slate-900 tracking-tighter mb-2">{overallScore}%</div>
+                        <div className={`text-[12px] font-black px-5 py-2 rounded-full border-2 uppercase tracking-widest ${ratingInfo.color} bg-white shadow-sm`}>
+                          {ratingInfo.label}
+                        </div>
+                     </div>
+                  </div>
                </div>
 
-               <div className="p-10 bg-slate-900 rounded-[2rem] text-white flex items-center justify-between shadow-2xl shadow-slate-900/30 relative overflow-hidden group/score">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent opacity-0 group-hover/score:opacity-100 transition-opacity" />
-                  <div className="flex flex-col relative z-10 w-full">
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Compliance Performance</span>
-                      <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-white/10 ${ratingInfo.color} backdrop-blur-sm border border-white/10`}>
-                        {ratingInfo.label}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center gap-6">
-                      <div className="flex-1">
-                        <GaugeChart score={overallScore} label={ratingInfo.label} />
-                      </div>
-                      <div className="flex flex-col gap-1 items-end">
-                        <motion.span 
-                          key={overallScore}
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          className="text-5xl font-display font-black leading-none"
-                        >
-                          {overallScore}%
-                        </motion.span>
-                        <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Overall Score</span>
-                      </div>
-                    </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t-4 border-slate-900 pt-10">
+                  <div className="space-y-6">
+                    <div className="h-px bg-slate-200 w-full" />
+                    <input 
+                      type="text"
+                      placeholder="Safety Manager Name"
+                      className="w-full text-center text-sm font-black uppercase tracking-widest text-slate-900 bg-transparent outline-none border-b-2 border-transparent focus:border-blue-500 py-2 transition-all"
+                      value={formData.safetyManager || ''}
+                      onChange={e => setFormData({...formData, safetyManager: e.target.value})}
+                    />
+                    <p className="text-[10px] font-black text-center text-slate-400 tracking-widest uppercase">Safety Manager Signature & Title</p>
+                  </div>
+                  <div className="space-y-6">
+                    <div className="h-px bg-slate-200 w-full" />
+                    <input 
+                      type="text"
+                      placeholder="Dept. Incharge Name"
+                      className="w-full text-center text-sm font-black uppercase tracking-widest text-slate-900 bg-transparent outline-none border-b-2 border-transparent focus:border-blue-500 py-2 transition-all"
+                      value={formData.deptInCharge || ''}
+                      onChange={e => setFormData({...formData, deptInCharge: e.target.value})}
+                    />
+                    <p className="text-[10px] font-black text-center text-slate-400 tracking-widest uppercase">Department Incharge Signature & Title</p>
                   </div>
                </div>
             </div>
-          </div>
-        </motion.div>
 
-        {/* Section B: Safety Management System */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
-          className="space-y-6"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600 font-black text-sm">B</div>
-              <h3 className="text-xs font-black uppercase tracking-[0.25em] text-slate-900">Safety Management System</h3>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg text-[8px] font-black text-slate-500 uppercase tracking-widest">
-              Scoring: 1 (Deficient) to 5 (Very Good)
+            {/* Document Footer (Inside Border) */}
+            <div className="px-10 py-8 border-t-4 border-slate-900 bg-[#f8fafc] flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex flex-col gap-2">
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-900">PREPARED BY: SAFETY MANAGER</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">APPROVED BY: VP TECHNICAL</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">REVISION DATE: 01.08.2024</div>
+              </div>
+              <div className="flex items-center gap-4 bg-white border-2 border-slate-200 px-6 py-3 rounded-full shadow-sm">
+                <Shield size={16} className="text-blue-500" />
+                <span className="text-[10px] font-black text-slate-900 uppercase italic tracking-widest">
+                  Confidential Property of BAIL
+                </span>
+              </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-lg overflow-hidden">
-             <div className="overflow-x-auto">
-               <table className="w-full border-collapse">
-                 <thead>
-                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                     <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-widest text-slate-400 w-16">S.No</th>
-                     <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Performance Parameters</th>
-                     <th className="px-8 py-4 text-center text-[9px] font-black uppercase tracking-widest text-slate-400">Evaluated (Y/N)</th>
-                     <th className="px-8 py-4 text-center text-[9px] font-black uppercase tracking-widest text-slate-400">Rating (1-5)</th>
-                     <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Comments</th>
-                   </tr>
-                 </thead>
-                 <tbody className="divide-y divide-slate-50">
-                   {safetyMetrics.map((row) => (
-                     <tr key={row.id} className="hover:bg-slate-50/30 transition-colors group">
-                       <td className="px-8 py-6 text-xs font-black text-slate-300">{row.id.toString().padStart(2, '0')}</td>
-                       <td className="px-8 py-6 text-xs font-bold text-slate-700 leading-relaxed max-w-sm">{row.parameter}</td>
-                       <td className="px-8 py-6">
-                         <div className="flex items-center justify-center gap-2">
-                           <button 
-                             onClick={() => updateSafetyMetric(row.id, 'evaluated', 'YES')}
-                             className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${row.evaluated === 'YES' ? 'bg-[#16a34a] text-white shadow-lg shadow-green-500/20' : 'bg-slate-50 text-slate-300 hover:text-slate-600'}`}
-                           >YES</button>
-                           <button 
-                             onClick={() => updateSafetyMetric(row.id, 'evaluated', 'NO')}
-                             className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${row.evaluated === 'NO' ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-slate-50 text-slate-300 hover:text-slate-600'}`}
-                           >NO</button>
-                         </div>
-                       </td>
-                       <td className="px-8 py-6">
-                         <div className="flex items-center justify-center gap-1">
-                           {[1, 2, 3, 4, 5].map(v => (
-                             <button
-                               key={v}
-                               onClick={() => updateSafetyMetric(row.id, 'rating', v)}
-                               className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black transition-all ${row.rating === v ? 'bg-[#2563eb] text-white shadow-lg shadow-blue-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100 active:scale-90'}`}
-                             >
-                               {v}
-                             </button>
-                           ))}
-                         </div>
-                       </td>
-                       <td className="px-8 py-6">
-                         <input 
-                           type="text" 
-                           placeholder="..."
-                           className="w-full h-10 bg-slate-50 border border-transparent rounded-xl px-4 text-xs font-bold text-slate-600 focus:bg-white focus:border-[#2563eb] outline-none transition-all"
-                           value={row.comments || ''}
-                           onChange={e => updateSafetyMetric(row.id, 'comments', e.target.value)}
-                         />
-                       </td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
-             </div>
-          </div>
-        </motion.div>
-
-        {/* Section C: Competence & Training */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.5 }}
-          className="space-y-6"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 font-black text-sm">C</div>
-            <h3 className="text-xs font-black uppercase tracking-[0.25em] text-slate-900">Contractor Competence & Training</h3>
-          </div>
-
-          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-lg overflow-hidden">
-             <div className="overflow-x-auto">
-               <table className="w-full border-collapse">
-                 <thead>
-                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                     <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-widest text-slate-400 w-16">S.No</th>
-                     <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Performance Parameters</th>
-                     <th className="px-8 py-4 text-center text-[9px] font-black uppercase tracking-widest text-slate-400">Evaluated (Y/N)</th>
-                     <th className="px-8 py-4 text-center text-[9px] font-black uppercase tracking-widest text-slate-400">Rating (1-5)</th>
-                     <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Comments</th>
-                   </tr>
-                 </thead>
-                 <tbody className="divide-y divide-slate-50">
-                   {competenceMetrics.map((row) => (
-                     <tr key={row.id} className="hover:bg-slate-50/30 transition-colors">
-                       <td className="px-8 py-6 text-xs font-black text-slate-300">{row.id.toString().padStart(2, '0')}</td>
-                       <td className="px-8 py-6 text-xs font-bold text-slate-700 leading-relaxed max-w-sm">{row.parameter}</td>
-                       <td className="px-8 py-6">
-                         <div className="flex items-center justify-center gap-2">
-                           <button 
-                             onClick={() => updateCompetenceMetric(row.id, 'evaluated', 'YES')}
-                             className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${row.evaluated === 'YES' ? 'bg-[#16a34a] text-white' : 'bg-slate-50 text-slate-300'}`}
-                           >YES</button>
-                           <button 
-                             onClick={() => updateCompetenceMetric(row.id, 'evaluated', 'NO')}
-                             className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${row.evaluated === 'NO' ? 'bg-red-500 text-white' : 'bg-slate-50 text-slate-300'}`}
-                           >NO</button>
-                         </div>
-                       </td>
-                       <td className="px-8 py-6">
-                         <div className="flex items-center justify-center gap-1">
-                           {[1, 2, 3, 4, 5].map(v => (
-                             <button
-                               key={v}
-                               onClick={() => updateCompetenceMetric(row.id, 'rating', v)}
-                               className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black transition-all ${row.rating === v ? 'bg-[#2563eb] text-white shadow-lg' : 'bg-slate-50 text-slate-400'}`}
-                             >
-                               {v}
-                             </button>
-                           ))}
-                         </div>
-                       </td>
-                       <td className="px-8 py-6">
-                         <input 
-                           type="text" 
-                           placeholder="..."
-                           className="w-full h-10 bg-slate-50 border border-transparent rounded-xl px-4 text-xs font-bold text-slate-600 focus:bg-white focus:border-[#2563eb] outline-none transition-all"
-                           value={row.comments || ''}
-                           onChange={e => updateCompetenceMetric(row.id, 'comments', e.target.value)}
-                         />
-                       </td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
-             </div>
-          </div>
-        </motion.div>
-
-        {/* Footer: Feedback & Signatures */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.6 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-8"
-        >
-           <div className="md:col-span-2 space-y-4">
-              <div className="flex items-center gap-3 ml-1">
-                <Info size={16} className="text-slate-400" />
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Overall Feedback</h4>
-              </div>
-              <textarea 
-                className="w-full h-40 bg-white border border-slate-100 rounded-[2rem] p-8 text-sm font-medium text-slate-600 focus:border-[#2563eb] focus:shadow-xl transition-all outline-none resize-none"
-                placeholder="Consolidated remarks on contractor performance..."
-                value={formData.overallFeedback || ''}
-                onChange={e => setFormData({...formData, overallFeedback: e.target.value})}
-              />
-           </div>
-
-           <div className="space-y-6">
-              <div className="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm space-y-8">
-                 <div className="space-y-4">
-                   <div className="h-px bg-slate-100 w-full" />
-                   <input 
-                     type="text"
-                     placeholder="Safety Manager Name"
-                     className="w-full text-center text-xs font-black uppercase tracking-widest text-slate-900 bg-transparent outline-none border-b border-transparent focus:border-slate-200 py-1"
-                     value={formData.safetyManager || ''}
-                     onChange={e => setFormData({...formData, safetyManager: e.target.value})}
-                   />
-                   <p className="text-[9px] font-bold text-center text-slate-400 tracking-widest uppercase">Safety Manager Signature</p>
-                 </div>
-                 
-                 <div className="space-y-4">
-                   <div className="h-px bg-slate-100 w-full" />
-                   <input 
-                     type="text"
-                     placeholder="Dept. Incharge Name"
-                     className="w-full text-center text-xs font-black uppercase tracking-widest text-slate-900 bg-transparent outline-none border-b border-transparent focus:border-slate-200 py-1"
-                     value={formData.deptInCharge || ''}
-                     onChange={e => setFormData({...formData, deptInCharge: e.target.value})}
-                   />
-                   <p className="text-[9px] font-bold text-center text-slate-400 tracking-widest uppercase">Department Incharge Signature</p>
-                 </div>
-              </div>
-              <div className="px-6 py-4 bg-slate-900 rounded-2xl flex items-center gap-3">
-                 <AlertCircle size={14} className="text-[#16a34a]" />
-                 <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
-                   *CLASSIFIED — CONFIDENTIAL FOR INTERNAL USE ONLY*
-                 </p>
-              </div>
-           </div>
         </motion.div>
 
       </motion.main>
@@ -1478,7 +1328,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
             font-family: "Arial", sans-serif !important;
             background-color: #ffffff !important;
             color: #000000 !important;
-            font-size: 10pt !important;
+            font-size: 9pt !important;
             line-height: 1.1 !important;
           }
 
@@ -1509,7 +1359,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
             align-items: center !important;
             word-break: break-word !important; 
             box-sizing: border-box !important;
-            font-size: 10pt !important;
+            font-size: 9pt !important;
           }
 
           .grid-cell:last-child {
@@ -1521,14 +1371,14 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
             font-weight: 900 !important; 
             text-transform: uppercase !important; 
             min-height: 20pt !important;
-            font-size: 10pt !important;
+            font-size: 9pt !important;
           }
           .sub-header { 
             background-color: #f8fafc !important; 
             font-weight: bold !important; 
             justify-content: center !important; 
             text-align: center !important; 
-            font-size: 10pt !important; 
+            font-size: 9pt !important; 
           }
           
           .col-index { flex: 0 0 5% !important; max-width: 5% !important; justify-content: center !important; font-weight: 900 !important; }
@@ -1537,9 +1387,9 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
           .col-rating { flex: 0 0 9% !important; max-width: 9% !important; justify-content: center !important; font-weight: 900 !important; }
           .col-comments { flex: 0 0 18% !important; max-width: 18% !important; font-style: italic !important; color: #1e293b !important; }
           
-          .header-title { font-size: 12pt !important; font-weight: 900 !important; text-align: center !important; width: 100% !important; line-height: 1.1 !important; }
-          .header-subtitle { font-size: 10pt !important; font-weight: 900 !important; margin: 2pt 0 !important; text-align: center !important; width: 100% !important; }
-          .header-code { font-size: 10pt !important; font-weight: 900 !important; text-align: center !important; width: 100% !important; }
+          .header-title { font-size: 10pt !important; font-weight: 900 !important; text-align: center !important; width: 100% !important; line-height: 1.1 !important; }
+          .header-subtitle { font-size: 9pt !important; font-weight: 900 !important; margin: 2pt 0 !important; text-align: center !important; width: 100% !important; }
+          .header-code { font-size: 9pt !important; font-weight: 900 !important; text-align: center !important; width: 100% !important; }
           
           .center-text { justify-content: center !important; text-align: center !important; }
           .bold-900 { font-weight: 900 !important; }
@@ -1554,7 +1404,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
         <div className="print-container">
           {/* Top Header Section */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8pt' }}>
-            <div className="bold-900" style={{ width: '25%', fontSize: '10.5pt' }}>REVISION NO. 01</div>
+            <div className="bold-900" style={{ width: '25%', fontSize: '9pt' }}>REVISION NO. 01</div>
             <div style={{ width: '50%' }}>
               <div className="header-title uppercase">BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA</div>
               <div className="header-subtitle uppercase">CONTRACTOR PERFORMANCE EVALUATION REPORT FORM</div>
@@ -1579,29 +1429,22 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
               <div className="grid-cell flex-none w-[35%] bold-900 uppercase leading-[1.1]">Brief Description of work undertaken:</div>
               <div className="grid-cell flex-1 flex-grow py-1.0 leading-snug">{formData.workDescription}</div>
             </div>
-            <div className="grid-row">
-              <div className="grid-cell col-index">3</div>
-              <div className="grid-cell flex-none w-[35%] bold-900 uppercase">LOTO Mode assigned for task:</div>
-              <div className="grid-cell flex-1 flex-grow bold-900 uppercase" style={{ color: '#ef4444' }}>
-                MODE {formData.lotoMode || '-'}{formData.lotoMode === '5' ? ' (PERMIT TO WORK - HIGH RISK)' : ''}
-              </div>
-            </div>
             {formData.lotoMode === '5' && (
               <>
                 <div className="grid-row">
-                  <div className="grid-cell col-index">4</div>
+                  <div className="grid-cell col-index">3</div>
                   <div className="grid-cell flex-none w-[35%] bold-900 uppercase">PTW Control Number:</div>
                   <div className="grid-cell flex-1 flex-grow font-black">{formData.ptwNumber}</div>
                 </div>
                 <div className="grid-row">
-                  <div className="grid-cell col-index">5</div>
+                  <div className="grid-cell col-index">4</div>
                   <div className="grid-cell flex-none w-[35%] bold-900 uppercase">SME Supervisor:</div>
                   <div className="grid-cell flex-1 flex-grow font-black">{formData.ptwSme}</div>
                 </div>
               </>
             )}
             <div className="grid-row">
-              <div className="grid-cell col-index">{formData.lotoMode === '5' ? '6' : '4'}</div>
+              <div className="grid-cell col-index">{formData.lotoMode === '5' ? '5' : '3'}</div>
               <div className="grid-cell flex-none w-[35%] bold-900 uppercase">Project Completion</div>
               <div className="grid-cell sub-header w-[12%] center-text" style={{ flex: '0 0 12%' }}>SCHEDULED</div>
               <div className="grid-cell w-[13%] center-text bold-900" style={{ flex: '0 0 13%' }}>{formData.projectCompletion.scheduled}</div>
@@ -1667,13 +1510,13 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
               <div className="grid-cell flex-[0.7] !flex-[0 _0_70%] justify-start px-6 bold-900 uppercase">
                 OVERALL RATING (Inadequate: 0-60, Deficient: 61-75, Good: 76-90, Superior: 91-100)
               </div>
-              <div className="grid-cell flex-[0.3] !flex-[0_0_30%] center-text bold-900 text-[12pt]" style={{ borderLeft: '2pt solid #000' }}>
+              <div className="grid-cell flex-[0.3] !flex-[0_0_30%] center-text bold-900 text-[10pt]" style={{ borderLeft: '2pt solid #000' }}>
                 {overallScore}% — {ratingInfo.label}
               </div>
             </div>
             <div className="grid-row min-h-[45pt] flex-col items-start p-3" style={{ borderTop: 'none' }}>
-              <div className="bold-900 mb-1.5 uppercase text-[10pt]">Overall Feedback:</div>
-              <div className="text-[10.5pt] leading-normal w-full px-2 font-medium">{formData.overallFeedback}</div>
+              <div className="bold-900 mb-1.5 uppercase text-[9pt]">Overall Feedback:</div>
+              <div className="text-[9.5pt] leading-normal w-full px-2 font-medium">{formData.overallFeedback}</div>
             </div>
           </div>
 
@@ -1685,13 +1528,13 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
             <div className="grid-row h-[80pt]">
               <div className="grid-cell w-1/2 !flex-[0_0_50%] flex-col items-start p-3">
                 <div className="font-black mb-auto uppercase">Safety Manager (Signature & Title)</div>
-                <div className="border-b-[2pt] w-[95%] font-black h-6 mb-1 flex items-end pb-1 ml-1 text-[10pt]" style={{ borderColor: '#000' }}>
+                <div className="border-b-[2pt] w-[95%] font-black h-6 mb-1 flex items-end pb-1 ml-1 text-[9pt]" style={{ borderColor: '#000' }}>
                   {formData.safetyManager}
                 </div>
               </div>
               <div className="grid-cell w-1/2 !flex-[0_0_50%] flex-col items-start p-3">
                 <div className="font-black mb-auto uppercase">Department In charge (Signature & Title)</div>
-                <div className="border-b-[2pt] w-[95%] font-black h-6 mb-1 flex items-end pb-1 ml-1 text-[10pt]" style={{ borderColor: '#000' }}>
+                <div className="border-b-[2pt] w-[95%] font-black h-6 mb-1 flex items-end pb-1 ml-1 text-[9pt]" style={{ borderColor: '#000' }}>
                   {formData.deptInCharge}
                 </div>
               </div>
@@ -1700,12 +1543,12 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
 
           {/* Professional Footer */}
           <div className="mt-6 pt-3 flex justify-between items-end" style={{ borderTop: '1.5pt solid #000' }}>
-            <div className="text-[10pt] font-black uppercase leading-normal">
+            <div className="text-[9pt] font-black uppercase leading-normal">
               <div>PREPARED BY: SAFETY MANAGER</div>
               <div>APPROVED BY: VP TECHNICAL</div>
               <div>REVISION DATE: 01.08.2024</div>
             </div>
-            <div className="text-[12pt] font-black uppercase italic tracking-tighter">
+            <div className="text-[10pt] font-black uppercase italic tracking-tighter">
               “CLASSIFIED – CONFIDENTIAL FOR INTERNAL USE ONLY”
             </div>
           </div>
