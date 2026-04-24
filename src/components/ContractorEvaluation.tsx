@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import pdfMake from "pdfmake/build/pdfmake";
 import * as pdfFonts from "pdfmake/build/vfs_fonts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Text } from 'recharts';
 
 // Initialize pdfMake fonts with robust check for different build environments
 if (pdfFonts && (pdfFonts as any).pdfMake) {
@@ -28,10 +29,70 @@ interface EvaluationRow {
   comments: string;
 }
 
+// Gauge Component for Score Visualization
+const GaugeChart = ({ score, label }: { score: number; label: string }) => {
+  const data = [
+    { name: 'Score', value: score },
+    { name: 'Remaining', value: 100 - score },
+  ];
+  
+  const getColor = (val: number) => {
+    if (val >= 91) return '#16a34a'; // Superior
+    if (val >= 76) return '#2563eb'; // Good
+    if (val >= 61) return '#eab308'; // Fair
+    return '#ef4444'; // Deficient
+  };
+
+  return (
+    <div className="w-full h-40">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="85%"
+            startAngle={180}
+            endAngle={0}
+            innerRadius={60}
+            outerRadius={85}
+            paddingAngle={0}
+            dataKey="value"
+          >
+            <Cell fill={getColor(score)} />
+            <Cell fill="#f1f5f9" />
+          </Pie>
+          <Text
+            x="50%"
+            y="70%"
+            textAnchor="middle"
+            dominantBaseline="middle"
+            className="text-2xl font-black fill-slate-900"
+          >
+            {`${score}%`}
+          </Text>
+          <Text
+            x="50%"
+            y="94%"
+            textAnchor="middle"
+            dominantBaseline="middle"
+            className="text-[10px] font-black fill-slate-400 uppercase tracking-widest"
+          >
+            {label}
+          </Text>
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
 export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluationProps) {
   const [formData, setFormData] = useState({
     contractCompany: '',
     workDescription: '',
+    lotoMode: '1' as '1' | '2' | '3' | '4' | '5' | '',
+    decisionPath: '',
+    ptwNumber: '',
+    ptwSme: '',
     projectCompletion: {
       scheduled: '',
       actual: ''
@@ -53,10 +114,27 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
     { id: 9, parameter: "Maintenance of worker safety standards", evaluated: '', rating: '', comments: '' },
     { id: 10, parameter: "Cooperation with requests for information regarding legal & safety compliance", evaluated: '', rating: '', comments: '' },
     { id: 11, parameter: "Compliance with laws, ordinance and regulations", evaluated: '', rating: '', comments: '' },
-    { id: 12, parameter: "Disposed waste in designated area", evaluated: '', rating: '', comments: '' },
+    { id: 12, parameter: "Disposed waste in designated area", evaluated: '', shadow: false, rating: '', comments: '' } as any,
     { id: 13, parameter: "Wearing other PPE's/ Safety Equipment", evaluated: '', rating: '', comments: '' },
     { id: 14, parameter: "Incident, Accident & Near Miss Reporting to plant", evaluated: '', rating: '', comments: '' },
   ]);
+
+  // Effect to add Mode 5 (PTW) specific metrics
+  useEffect(() => {
+    if (formData.lotoMode === '5') {
+      const ptwMetrics: EvaluationRow[] = [
+        { id: 101, parameter: "Mandatory PTW Training validation for all involved personnel", evaluated: '', rating: '', comments: '' },
+        { id: 102, parameter: "Continuous SME Supervision during live/energized work", evaluated: '', rating: '', comments: '' },
+        { id: 103, parameter: "Active Permit documentation present and valid at work front", evaluated: '', rating: '', comments: '' }
+      ];
+      setSafetyMetrics(prev => {
+        const filtered = prev.filter(m => m.id < 100);
+        return [...filtered, ...ptwMetrics];
+      });
+    } else {
+      setSafetyMetrics(prev => prev.filter(m => m.id < 100));
+    }
+  }, [formData.lotoMode]);
 
   const [competenceMetrics, setCompetenceMetrics] = useState<EvaluationRow[]>([
     { id: 1, parameter: "Site induction of contractor's employees (including sub-contractors).", evaluated: '', rating: '', comments: '' },
@@ -126,7 +204,14 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
   };
 
   const loadAssessment = (assessment: any) => {
-    setFormData(assessment.formData);
+    setFormData(prev => ({
+      ...prev,
+      ...assessment.formData,
+      projectCompletion: {
+        ...prev.projectCompletion,
+        ...(assessment.formData?.projectCompletion || {})
+      }
+    }));
     setSafetyMetrics(assessment.safetyMetrics);
     setCompetenceMetrics(assessment.competenceMetrics);
     setShowHistoryModal(false);
@@ -156,26 +241,26 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
       try {
         const docDefinition: any = {
           pageSize: 'A4',
-          pageMargins: [25, 20, 25, 20],
+          pageMargins: [20, 15, 20, 15],
           defaultStyle: {
             font: 'Roboto',
-            fontSize: 8
+            fontSize: 9
           },
           content: [
             {
               columns: [
-                { text: 'REVISION NO. 01', bold: true, fontSize: 8, width: '25%' },
+                { text: 'REVISION NO. 01', bold: true, fontSize: 7, width: '25%' },
                 {
                   stack: [
-                    { text: 'BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA', alignment: 'center', bold: true, fontSize: 9 },
-                    { text: 'CONTRACTOR PERFORMANCE EVALUATION REPORT FORM', alignment: 'center', bold: true, fontSize: 8, margin: [0, 1] },
-                    { text: 'BAIL-S-110-FRM-01-00-00-04', alignment: 'center', bold: true, fontSize: 8 }
+                    { text: 'BRINDAVAN AGRO INDUSTRIES PVT LTD, CHHATA, MATHURA', alignment: 'center', bold: true, fontSize: 11 },
+                    { text: 'CONTRACTOR PERFORMANCE EVALUATION REPORT FORM', alignment: 'center', bold: true, fontSize: 10, margin: [0, 1] },
+                    { text: 'BAIL-S-110-FRM-01-00-00-04', alignment: 'center', bold: true, fontSize: 9 }
                   ],
                   width: '50%'
                 },
                 { text: '', width: '25%' }
               ],
-              margin: [0, 0, 0, 10]
+              margin: [0, 0, 0, 6]
             },
             {
               table: {
@@ -185,7 +270,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   ['1', {
                     columns: [
                       { text: 'Contract Company/Business Name:', bold: true, width: '40%' },
-                      { text: formData.contractCompany || '-', bold: true }
+                      { text: formData.contractCompany || '-', bold: true, color: '#1e3a8a' }
                     ]
                   }],
                   ['2', {
@@ -195,6 +280,32 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                     ]
                   }],
                   ['3', {
+                    columns: [
+                      { text: 'LOTO Mode assigned for task:', bold: true, width: '40%' },
+                      { text: `MODE ${formData.lotoMode || '-'}${formData.lotoMode === '5' ? ' (PERMIT TO WORK - HIGH RISK)' : ''}`, bold: true, color: formData.lotoMode === '5' ? '#ef4444' : '#000' }
+                    ]
+                  }],
+                  ...(formData.lotoMode === '5' ? [
+                    ['4', {
+                      columns: [
+                        { text: 'PTW Control Number:', bold: true, width: '40%' },
+                        { text: formData.ptwNumber || '', bold: true }
+                      ]
+                    }],
+                    ['5', {
+                      columns: [
+                        { text: 'SME Supervisor (Live Work):', bold: true, width: '40%' },
+                        { text: formData.ptwSme || '', bold: true }
+                      ]
+                    }]
+                  ] : []),
+                  [formData.lotoMode === '5' ? '6' : '4', {
+                    columns: [
+                      { text: 'LOTO Decision Path / Justification:', bold: true, width: '40%' },
+                      { text: formData.decisionPath || '-', fontSize: 8.5 }
+                    ]
+                  }],
+                  [formData.lotoMode === '5' ? '7' : '5', {
                     columns: [
                       { text: 'Project Completion', bold: true, width: '40%' },
                       { text: 'SCHEDULED:', margin: [0, 0, 5, 0], bold: true },
@@ -218,9 +329,9 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
             },
             {
               text: 'SCORING CRITERIA: Very Good:- 5, Good:- 4, Average:- 3, Need Improvement:- 2, Inadequate:- 1',
-              fontSize: 7.5,
+              fontSize: 8.5,
               italic: true,
-              margin: [0, 3, 0, 3]
+              margin: [0, 2, 0, 2]
             },
             {
               table: {
@@ -236,14 +347,14 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   ],
                   ...safetyMetrics.map(m => [
                     { text: m.id.toString(), alignment: 'center' },
-                    m.parameter,
+                    { text: m.parameter, fontSize: 9 },
                     { text: m.evaluated || '-', alignment: 'center' },
                     { text: (m.rating || '-').toString(), alignment: 'center', bold: true },
-                    m.comments || '-'
+                    { text: m.comments || '-', fontSize: 8.5 }
                   ])
                 ]
               },
-              margin: [0, 0, 0, 8]
+              margin: [0, 0, 0, 5]
             },
             {
               table: {
@@ -252,30 +363,30 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   [{ text: 'C', bold: true, fillColor: '#f1f5f9' }, { text: 'CONTRACTOR COMPETENCE & TRAINING', bold: true, fillColor: '#f1f5f9' }]
                 ]
               },
-              margin: [0, 0, 0, 3]
+              margin: [0, 0, 0, 2]
             },
             {
               table: {
                 headerRows: 1,
-                widths: [25, '*', 60, 40, 80],
+                widths: [25, '*', 50, 35, 75],
                 body: [
                   [
                     { text: 'S.NO.', bold: true, alignment: 'center', fillColor: '#f8fafc' },
                     { text: 'PERFORMANCE PARAMETERS', bold: true, alignment: 'center', fillColor: '#f8fafc' },
-                    { text: 'EVALUATED? (YES/NO)', bold: true, alignment: 'center', fillColor: '#f8fafc' },
+                    { text: 'EVALUATED? (Y/N)', bold: true, alignment: 'center', fillColor: '#f8fafc' },
                     { text: 'RATING', bold: true, alignment: 'center', fillColor: '#f8fafc' },
                     { text: 'COMMENTS', bold: true, alignment: 'center', fillColor: '#f8fafc' }
                   ],
                   ...competenceMetrics.map(m => [
                     { text: m.id.toString(), alignment: 'center' },
-                    m.parameter,
+                    { text: m.parameter, fontSize: 9 },
                     { text: m.evaluated || '-', alignment: 'center' },
                     { text: (m.rating || '-').toString(), alignment: 'center', bold: true },
-                    m.comments || '-'
+                    { text: m.comments || '-', fontSize: 8.5 }
                   ])
                 ]
               },
-              margin: [0, 0, 0, 8]
+              margin: [0, 0, 0, 6]
             },
             {
               table: {
@@ -283,21 +394,21 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                 body: [
                   [
                     { text: 'OVERALL RATING (Inadequate: 0-60, Deficient: 61-75, Good: 76-90, Superior: 91-100)', bold: true, alignment: 'left', fillColor: '#f8fafc' },
-                    { text: `${overallScore}% — ${ratingInfo.label}`, bold: true, alignment: 'center', color: '#1e3a8a', fontSize: 10 }
+                    { text: `${overallScore}% — ${ratingInfo.label}`, bold: true, alignment: 'center', color: '#1e3a8a', fontSize: 11 }
                   ]
                 ]
               },
-              margin: [0, 0, 0, 8]
+              margin: [0, 0, 0, 5]
             },
             {
               table: {
                 widths: ['*'],
                 body: [
                   [{ text: 'Overall Feedback:', bold: true, border: [true, true, true, false] }],
-                  [{ text: formData.overallFeedback || 'No feedback provided.', margin: [10, 3, 0, 10], border: [true, false, true, true] }]
+                  [{ text: formData.overallFeedback || 'No feedback provided.', margin: [5, 2, 0, 5], fontSize: 8.5, border: [true, false, true, true] }]
                 ]
               },
-              margin: [0, 0, 0, 15]
+              margin: [0, 0, 0, 8]
             },
             {
               table: {
@@ -307,25 +418,25 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   [
                     {
                       stack: [
-                        { text: 'Safety Manager (Signature & Title)', bold: true, fontSize: 7.5 },
-                        { text: formData.safetyManager || '____________________', margin: [0, 10, 0, 0], bold: true, fontSize: 9 }
+                        { text: 'Safety Manager (Signature & Title)', bold: true, fontSize: 8.5 },
+                        { text: formData.safetyManager || '____________________', margin: [0, 6, 0, 0], bold: true, fontSize: 10 }
                       ],
-                      padding: [5, 6, 5, 6]
+                      padding: [5, 4, 5, 4]
                     },
                     {
                       stack: [
-                        { text: 'Department In charge (Signature & Title)', bold: true, fontSize: 7.5 },
-                        { text: formData.deptInCharge || '____________________', margin: [0, 10, 0, 0], bold: true, fontSize: 9 }
+                        { text: 'Department In charge (Signature & Title)', bold: true, fontSize: 8.5 },
+                        { text: formData.deptInCharge || '____________________', margin: [0, 6, 0, 0], bold: true, fontSize: 10 }
                       ],
-                      padding: [5, 6, 5, 6]
+                      padding: [5, 4, 5, 4]
                     }
                   ]
                 ]
               },
-              margin: [0, 0, 0, 20]
+              margin: [0, 0, 0, 10]
             },
             {
-              canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.2 }]
+              canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1 }]
             },
             {
               columns: [
@@ -336,16 +447,16 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                     'REVISION DATE: 01.08.2024'
                   ],
                   bold: true,
-                  fontSize: 7.5,
-                  margin: [0, 8, 0, 0]
+                  fontSize: 8,
+                  margin: [0, 4, 0, 0]
                 },
                 {
                   text: '“CLASSIFIED – CONFIDENTIAL FOR INTERNAL USE ONLY”',
                   alignment: 'right',
                   bold: true,
                   italic: true,
-                  fontSize: 8,
-                  margin: [0, 15, 0, 0]
+                  fontSize: 8.5,
+                  margin: [0, 8, 0, 0]
                 }
               ]
             }
@@ -414,16 +525,51 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
           </tr>
           <tr>
             <td width="30">3</td>
+            <td><b>LOTO Mode assigned for task:</b> MODE ${formData.lotoMode || '-'}${formData.lotoMode === '5' ? ' (PERMIT TO WORK)' : ''}</td>
+          </tr>
+          ${formData.lotoMode === '5' ? `
+          <tr>
+            <td width="30">4</td>
+            <td><b>PTW Control Number:</b> ${formData.ptwNumber || ''}</td>
+          </tr>
+          <tr>
+            <td width="30">5</td>
+            <td><b>SME Supervisor (Live Work):</b> ${formData.ptwSme || ''}</td>
+          </tr>
+          <tr>
+            <td width="30">6</td>
+            <td><b>LOTO Decision Path / Justification:</b><br/>${formData.decisionPath || '-'}</td>
+          </tr>
+          <tr>
+            <td width="30">7</td>
             <td>
               <table style="border: none; margin: 0;">
                 <tr style="border: none;">
                   <td style="border: none;"><b>Project Completion</b></td>
-                  <td style="border: none;"><b>SCHEDULED:</b> ${formData.projectCompletion.scheduled || '-'}</td>
-                  <td style="border: none;"><b>ACTUAL:</b> ${formData.projectCompletion.actual || '-'}</td>
+                  <td style="border: none;"><b>SCHEDULED:</b> ${formData.projectCompletion.scheduled || ''}</td>
+                  <td style="border: none;"><b>ACTUAL:</b> ${formData.projectCompletion.actual || ''}</td>
                 </tr>
               </table>
             </td>
           </tr>
+          ` : `
+          <tr>
+            <td width="30">4</td>
+            <td><b>LOTO Decision Path / Justification:</b><br/>${formData.decisionPath || '-'}</td>
+          </tr>
+          <tr>
+            <td width="30">5</td>
+            <td>
+              <table style="border: none; margin: 0;">
+                <tr style="border: none;">
+                  <td style="border: none;"><b>Project Completion</b></td>
+                  <td style="border: none;"><b>SCHEDULED:</b> ${formData.projectCompletion.scheduled || ''}</td>
+                  <td style="border: none;"><b>ACTUAL:</b> ${formData.projectCompletion.actual || ''}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          `}
         </table>
 
         <table>
@@ -548,8 +694,8 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
   const getRatingLabel = (score: number) => {
     if (score >= 91) return { label: 'SUPERIOR', color: 'text-green-600' };
     if (score >= 76) return { label: 'GOOD', color: 'text-blue-600' };
-    if (score >= 61) return { label: 'FAIR', color: 'text-yellow-600' };
-    return { label: 'DEFICIENT', color: 'text-red-600' };
+    if (score >= 61) return { label: 'DEFICIENT', color: 'text-yellow-600' };
+    return { label: 'INADEQUATE', color: 'text-red-600' };
   };
 
   const ratingInfo = getRatingLabel(overallScore);
@@ -557,38 +703,41 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-20">
       {/* Header Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200">
+      <nav className="sticky top-0 z-50 bg-white/60 backdrop-blur-2xl border-b border-white/20 shadow-[0_4px_30px_rgba(0,0,0,0.03)]">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={onBack}
-              className="p-2.5 bg-slate-100 rounded-xl text-slate-600 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+              className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
               title="Back"
             >
               <ArrowLeft size={20} />
-            </button>
-            <div className="h-8 w-px bg-slate-200 mx-2" />
+            </motion.button>
+            <div className="h-8 w-px bg-slate-200/50 mx-2" />
             <div className="flex flex-col">
-              <h1 className="text-sm font-black tracking-tighter text-slate-900 uppercase leading-none">Contractor Evaluation</h1>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">BAIL-S-110-FRM-01-00-00-04</span>
-              <span className="text-[8px] text-blue-500 font-bold uppercase mt-1 md:hidden lg:inline">*Open in new tab if print/save is blocked</span>
+              <h1 className="text-[9px] font-black tracking-tighter text-slate-900 uppercase leading-none">Contractor Evaluation</h1>
+              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">BAIL-S-110-FRM-01-00-00-04</span>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
             {savedAssessments.length > 0 && (
-              <button 
+              <motion.button 
+                whileHover={{ y: -2 }}
                 onClick={() => setShowHistoryModal(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all"
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:border-blue-500 hover:text-blue-600 transition-all shadow-sm"
                 title="Load Saved Assessments"
               >
                 <FolderOpen size={16} />
-                Saved
-              </button>
+                <span className="hidden md:inline">Saved reports</span>
+              </motion.button>
             )}
-            <button 
+            <motion.button 
+              whileHover={{ y: -2 }}
               onClick={handleSave}
-              className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 font-black text-[10px] uppercase tracking-widest hover:border-slate-900 transition-all active:scale-95"
+              className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 font-black text-[10px] uppercase tracking-widest hover:border-green-500 hover:text-green-600 transition-all active:scale-95 shadow-sm"
             >
               {showSaveMessage ? (
                 <>
@@ -601,17 +750,20 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   Save Draft
                 </>
               )}
-            </button>
+            </motion.button>
             <div className="relative">
-              <button 
+              <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 id="download-report-btn"
                 onClick={() => setShowDownloadMenu(!showDownloadMenu)}
-                className="flex items-center gap-2 px-6 py-2.5 bg-[#0f172a] text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
+                className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:bg-[#16a34a] transition-all overflow-hidden relative group"
               >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 <Download size={16} />
-                Download Report
-                <ChevronDown size={14} className={`transition-transform ${showDownloadMenu ? 'rotate-180' : ''}`} />
-              </button>
+                Download
+                <ChevronDown size={14} className={`transition-transform duration-300 ${showDownloadMenu ? 'rotate-180' : ''}`} />
+              </motion.button>
               
               <AnimatePresence>
                 {showDownloadMenu && (
@@ -666,27 +818,37 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
           className="bg-white/80 backdrop-blur-2xl p-12 rounded-[2.5rem] border border-white shadow-2xl shadow-slate-900/10 relative overflow-hidden text-center group hover:scale-[1.01] transition-all duration-500"
         >
            {/* Decorative background effects */}
-           <div className="absolute -top-24 -left-24 w-64 h-64 bg-red-400/10 rounded-full blur-3xl group-hover:bg-red-400/20 transition-colors" />
-           <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl group-hover:bg-blue-400/20 transition-colors" />
+           <div className="absolute -top-24 -left-24 w-64 h-64 bg-red-400/20 rounded-full blur-3xl group-hover:bg-red-400/30 transition-colors animate-pulse" />
+           <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl group-hover:bg-blue-400/30 transition-colors animate-pulse" style={{ animationDelay: '1s' }} />
            
            <div className="flex items-center justify-between gap-4 mb-8">
-             <div className="w-24 h-12 flex items-center justify-center grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
+             <motion.div 
+               whileHover={{ scale: 1.1, rotate: 5 }}
+               className="w-24 h-12 flex items-center justify-center grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all cursor-pointer bg-white/50 rounded-xl p-2 backdrop-blur-sm shadow-sm"
+             >
                <img 
                  src="https://upload.wikimedia.org/wikipedia/commons/c/ce/Coca-Cola_logo.svg" 
                  alt="Coca-Cola Logo" 
                  className="max-h-full"
                  referrerPolicy="no-referrer"
                />
-             </div>
-             <div className="px-5 py-2 bg-slate-900 text-white rounded-full text-[9px] font-black tracking-widest uppercase shadow-lg">REVISION NO. 01</div>
-             <div className="w-24 h-12 flex items-center justify-center grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
+               <span className="absolute -bottom-6 text-[9px] font-black text-slate-500 uppercase tracking-tighter bg-white shadow-sm px-2 py-0.5 rounded-full border border-slate-100">TREXSE</span>
+             </motion.div>
+
+             <div className="px-5 py-2 bg-slate-900 text-white rounded-full text-[9px] font-black tracking-widest uppercase shadow-lg shadow-slate-900/20 border border-white/20">REVISION NO. 01</div>
+
+             <motion.div 
+               whileHover={{ scale: 1.1, rotate: -5 }}
+               className="w-24 h-12 flex items-center justify-center grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all cursor-pointer bg-white/50 rounded-xl p-2 backdrop-blur-sm shadow-sm relative"
+             >
                <img 
                  src="https://upload.wikimedia.org/wikipedia/en/b/ba/Thums_Up_logo.png" 
                  alt="Thums Up Logo" 
                  className="max-h-full"
                  referrerPolicy="no-referrer"
                />
-             </div>
+               <span className="absolute -bottom-6 text-[9px] font-black text-slate-500 uppercase tracking-tighter bg-white shadow-sm px-2 py-0.5 rounded-full border border-slate-100">TWEO</span>
+             </motion.div>
            </div>
 
            <h2 className="text-2xl md:text-3xl font-display font-black text-slate-900 tracking-tight uppercase leading-tight">
@@ -695,7 +857,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
            </h2>
            <div className="h-1.5 w-32 bg-[#16a34a] mx-auto mt-8 rounded-full shadow-lg shadow-green-200" />
            <p className="mt-8 text-xs font-black text-[#16a34a] tracking-[0.5em] uppercase">CONTRACTOR PERFORMANCE EVALUATION REPORT FORM</p>
-        </div>
+        </motion.div>
 
         {/* Section A: Contractor Details */}
         <motion.div 
@@ -706,68 +868,155 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
           className="space-y-6"
         >
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-black text-sm">A</div>
+            <div className="w-10 h-10 rounded-xl bg-blue-500 text-white shadow-lg shadow-blue-500/20 flex items-center justify-center font-black text-sm">A</div>
             <h3 className="text-xs font-black uppercase tracking-[0.25em] text-slate-900">Contractor Details</h3>
           </div>
           
-          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-lg p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <div className="space-y-2">
+          <div className="bg-white/70 backdrop-blur-md rounded-[2.5rem] border border-white shadow-xl p-10 grid grid-cols-1 md:grid-cols-2 gap-10 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-blue-100 transition-colors" />
+            
+            <div className="space-y-8 relative z-10">
+              <div className="space-y-3">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Contract Company / Business Name</label>
+                <div className="relative group/input">
+                   <div className="absolute inset-0 bg-blue-500/5 rounded-2xl blur-lg opacity-0 group-focus-within/input:opacity-100 transition-opacity" />
+                   <input 
+                    type="text" 
+                    className="w-full h-16 bg-slate-50/50 border-2 border-slate-100 rounded-2xl px-6 font-bold text-slate-900 focus:border-[#2563eb] focus:bg-white outline-none transition-all placeholder:text-slate-200 relative z-10"
+                    placeholder="Enter company name..."
+                    value={formData.contractCompany || ''}
+                    onChange={e => setFormData({...formData, contractCompany: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Assigned LOTO Mode</label>
+                  <select 
+                    className="w-full h-16 bg-slate-50/50 border-2 border-slate-100 rounded-2xl px-6 font-bold text-slate-900 focus:border-[#2563eb] focus:bg-white outline-none transition-all cursor-pointer"
+                    value={formData.lotoMode || '1'}
+                    onChange={e => setFormData({...formData, lotoMode: e.target.value as any})}
+                  >
+                    <option value="1">MODE 01 — Simple LOTO</option>
+                    <option value="2">MODE 02 — Group LOTO</option>
+                    <option value="3">MODE 03 — Multi-Source LOTO</option>
+                    <option value="4">MODE 04 — Specific SOP</option>
+                    <option value="5">MODE 05 — Permit to Work (LIVE)</option>
+                  </select>
+                </div>
+
+                {formData.lotoMode === '5' && (
+                  <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="space-y-3"
+                  >
+                    <label className="text-[10px] font-black uppercase tracking-widest text-red-500 ml-1">PTW Control Number</label>
+                    <input 
+                      type="text" 
+                      className="w-full h-16 bg-red-50/30 border-2 border-red-100 rounded-2xl px-6 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all placeholder:text-slate-300"
+                      placeholder="e.g. PTW-2024-001"
+                      value={formData.ptwNumber || ''}
+                      onChange={e => setFormData({...formData, ptwNumber: e.target.value})}
+                    />
+                  </motion.div>
+                )}
+              </div>
+
+              {formData.lotoMode === '5' && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-3"
+                >
+                  <label className="text-[10px] font-black uppercase tracking-widest text-red-500 ml-1">SME Supervisor (Mandatory for Live Work)</label>
+                  <input 
+                    type="text" 
+                    className="w-full h-16 bg-red-50/30 border-2 border-red-100 rounded-2xl px-6 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all placeholder:text-slate-300"
+                    placeholder="Enter SME name..."
+                    value={formData.ptwSme || ''}
+                    onChange={e => setFormData({...formData, ptwSme: e.target.value})}
+                  />
+                </motion.div>
+              )}
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">LOTO Decision Path / Assessment Justification</label>
                 <input 
                   type="text" 
-                  className="w-full h-14 bg-slate-50 border-2 border-transparent rounded-2xl px-6 font-bold text-slate-900 focus:border-[#2563eb] focus:bg-white outline-none transition-all placeholder:text-slate-200"
-                  placeholder="Enter company name..."
-                  value={formData.contractCompany}
-                  onChange={e => setFormData({...formData, contractCompany: e.target.value})}
+                  className="w-full h-16 bg-slate-50/50 border-2 border-slate-100 rounded-2xl px-6 font-bold text-slate-900 focus:border-[#2563eb] focus:bg-white outline-none transition-all placeholder:text-slate-200 relative z-10"
+                  placeholder="e.g. Q1(Y) -> Q2(N) -> Q3(Y) -> MODE 4"
+                  value={formData.decisionPath || ''}
+                  onChange={e => setFormData({...formData, decisionPath: e.target.value})}
                 />
               </div>
-              <div className="space-y-2">
+
+              <div className="space-y-3">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Brief Description of work undertaken</label>
                 <textarea 
-                  className="w-full h-32 bg-slate-50 border-2 border-transparent rounded-2xl p-6 font-bold text-slate-900 focus:border-[#2563eb] focus:bg-white outline-none transition-all resize-none placeholder:text-slate-200"
+                  className="w-full h-40 bg-slate-50/50 border-2 border-slate-100 rounded-2xl p-6 font-bold text-slate-900 focus:border-[#2563eb] focus:bg-white outline-none transition-all resize-none placeholder:text-slate-200"
                   placeholder="Describe the contract scope..."
-                  value={formData.workDescription}
+                  value={formData.workDescription || ''}
                   onChange={e => setFormData({...formData, workDescription: e.target.value})}
                 />
               </div>
             </div>
 
-            <div className="space-y-6">
-               <div className="p-6 bg-slate-50 rounded-[1.5rem] space-y-4">
-                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Project Completion Schedule</h4>
-                 <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-2">
+            <div className="space-y-8 relative z-10">
+               <div className="p-8 bg-slate-50/50 border border-slate-100 rounded-[2rem] space-y-6">
+                 <div className="flex items-center gap-2">
+                   <Clock size={14} className="text-blue-500" />
+                   <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Project Timeline</h4>
+                 </div>
+                 <div className="grid grid-cols-2 gap-6">
+                   <div className="space-y-3">
                      <label className="text-[9px] font-black uppercase tracking-tighter text-slate-400">Scheduled Date</label>
                      <input 
                        type="date" 
-                       className="w-full h-12 bg-white border border-slate-200 rounded-xl px-4 text-xs font-bold focus:border-[#2563eb] outline-none"
-                       value={formData.projectCompletion.scheduled}
+                       className="w-full h-14 bg-white border border-slate-200 rounded-xl px-4 text-xs font-bold focus:border-[#2563eb] focus:shadow-lg focus:shadow-blue-500/10 outline-none transition-all"
+                       value={formData.projectCompletion?.scheduled || ''}
                        onChange={e => setFormData({...formData, projectCompletion: { ...formData.projectCompletion, scheduled: e.target.value }})}
                      />
                    </div>
-                   <div className="space-y-2">
+                   <div className="space-y-3">
                      <label className="text-[9px] font-black uppercase tracking-tighter text-slate-400">Actual Date</label>
                      <input 
                        type="date" 
-                       className="w-full h-12 bg-white border border-slate-200 rounded-xl px-4 text-xs font-bold focus:border-[#2563eb] outline-none"
-                       value={formData.projectCompletion.actual}
+                       className="w-full h-14 bg-white border border-slate-200 rounded-xl px-4 text-xs font-bold focus:border-[#2563eb] focus:shadow-lg focus:shadow-blue-500/10 outline-none transition-all"
+                       value={formData.projectCompletion?.actual || ''}
                        onChange={e => setFormData({...formData, projectCompletion: { ...formData.projectCompletion, actual: e.target.value }})}
                      />
                    </div>
                  </div>
                </div>
 
-               <div className="p-8 bg-[#0f172a] rounded-[2rem] text-white flex items-center justify-between shadow-xl shadow-slate-900/20">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Compliance Score</span>
-                    <div className="flex items-baseline gap-2 mt-1">
-                      <span className="text-4xl font-display font-black leading-none">{overallScore}%</span>
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${ratingInfo.color}`}>{ratingInfo.label}</span>
+               <div className="p-10 bg-slate-900 rounded-[2rem] text-white flex items-center justify-between shadow-2xl shadow-slate-900/30 relative overflow-hidden group/score">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent opacity-0 group-hover/score:opacity-100 transition-opacity" />
+                  <div className="flex flex-col relative z-10 w-full">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Compliance Performance</span>
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-white/10 ${ratingInfo.color} backdrop-blur-sm border border-white/10`}>
+                        {ratingInfo.label}
+                      </span>
                     </div>
-                  </div>
-                  <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center">
-                    <CheckCircle2 size={24} className="text-[#16a34a]" />
+                    
+                    <div className="flex items-center gap-6">
+                      <div className="flex-1">
+                        <GaugeChart score={overallScore} label={ratingInfo.label} />
+                      </div>
+                      <div className="flex flex-col gap-1 items-end">
+                        <motion.span 
+                          key={overallScore}
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className="text-5xl font-display font-black leading-none"
+                        >
+                          {overallScore}%
+                        </motion.span>
+                        <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Overall Score</span>
+                      </div>
+                    </div>
                   </div>
                </div>
             </div>
@@ -787,7 +1036,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
               <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600 font-black text-sm">B</div>
               <h3 className="text-xs font-black uppercase tracking-[0.25em] text-slate-900">Safety Management System</h3>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg text-[9px] font-black text-slate-500 uppercase tracking-widest">
+            <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg text-[8px] font-black text-slate-500 uppercase tracking-widest">
               Scoring: 1 (Deficient) to 5 (Very Good)
             </div>
           </div>
@@ -797,11 +1046,11 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                <table className="w-full border-collapse">
                  <thead>
                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                     <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 w-16">S.No</th>
-                     <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Performance Parameters</th>
-                     <th className="px-8 py-5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Evaluated (Y/N)</th>
-                     <th className="px-8 py-5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Rating (1-5)</th>
-                     <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Comments</th>
+                     <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-widest text-slate-400 w-16">S.No</th>
+                     <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Performance Parameters</th>
+                     <th className="px-8 py-4 text-center text-[9px] font-black uppercase tracking-widest text-slate-400">Evaluated (Y/N)</th>
+                     <th className="px-8 py-4 text-center text-[9px] font-black uppercase tracking-widest text-slate-400">Rating (1-5)</th>
+                     <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Comments</th>
                    </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-50">
@@ -839,7 +1088,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                            type="text" 
                            placeholder="..."
                            className="w-full h-10 bg-slate-50 border border-transparent rounded-xl px-4 text-xs font-bold text-slate-600 focus:bg-white focus:border-[#2563eb] outline-none transition-all"
-                           value={row.comments}
+                           value={row.comments || ''}
                            onChange={e => updateSafetyMetric(row.id, 'comments', e.target.value)}
                          />
                        </td>
@@ -869,11 +1118,11 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                <table className="w-full border-collapse">
                  <thead>
                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                     <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 w-16">S.No</th>
-                     <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Performance Parameters</th>
-                     <th className="px-8 py-5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Evaluated (Y/N)</th>
-                     <th className="px-8 py-5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Rating (1-5)</th>
-                     <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Comments</th>
+                     <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-widest text-slate-400 w-16">S.No</th>
+                     <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Performance Parameters</th>
+                     <th className="px-8 py-4 text-center text-[9px] font-black uppercase tracking-widest text-slate-400">Evaluated (Y/N)</th>
+                     <th className="px-8 py-4 text-center text-[9px] font-black uppercase tracking-widest text-slate-400">Rating (1-5)</th>
+                     <th className="px-8 py-4 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Comments</th>
                    </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-50">
@@ -911,7 +1160,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                            type="text" 
                            placeholder="..."
                            className="w-full h-10 bg-slate-50 border border-transparent rounded-xl px-4 text-xs font-bold text-slate-600 focus:bg-white focus:border-[#2563eb] outline-none transition-all"
-                           value={row.comments}
+                           value={row.comments || ''}
                            onChange={e => updateCompetenceMetric(row.id, 'comments', e.target.value)}
                          />
                        </td>
@@ -939,7 +1188,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
               <textarea 
                 className="w-full h-40 bg-white border border-slate-100 rounded-[2rem] p-8 text-sm font-medium text-slate-600 focus:border-[#2563eb] focus:shadow-xl transition-all outline-none resize-none"
                 placeholder="Consolidated remarks on contractor performance..."
-                value={formData.overallFeedback}
+                value={formData.overallFeedback || ''}
                 onChange={e => setFormData({...formData, overallFeedback: e.target.value})}
               />
            </div>
@@ -952,7 +1201,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                      type="text"
                      placeholder="Safety Manager Name"
                      className="w-full text-center text-xs font-black uppercase tracking-widest text-slate-900 bg-transparent outline-none border-b border-transparent focus:border-slate-200 py-1"
-                     value={formData.safetyManager}
+                     value={formData.safetyManager || ''}
                      onChange={e => setFormData({...formData, safetyManager: e.target.value})}
                    />
                    <p className="text-[9px] font-bold text-center text-slate-400 tracking-widest uppercase">Safety Manager Signature</p>
@@ -964,7 +1213,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                      type="text"
                      placeholder="Dept. Incharge Name"
                      className="w-full text-center text-xs font-black uppercase tracking-widest text-slate-900 bg-transparent outline-none border-b border-transparent focus:border-slate-200 py-1"
-                     value={formData.deptInCharge}
+                     value={formData.deptInCharge || ''}
                      onChange={e => setFormData({...formData, deptInCharge: e.target.value})}
                    />
                    <p className="text-[9px] font-bold text-center text-slate-400 tracking-widest uppercase">Department Incharge Signature</p>
@@ -1017,7 +1266,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                       type="text" 
                       placeholder="Search assessments..."
                       className="w-full h-12 bg-white border border-slate-200 rounded-xl px-12 text-sm font-bold focus:border-blue-500 outline-none transition-all shadow-sm"
-                      value={searchQuery}
+                      value={searchQuery || ''}
                       onChange={e => setSearchQuery(e.target.value)}
                     />
                     <Info size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
@@ -1025,7 +1274,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   <div className="flex gap-2">
                     <select 
                       className="h-12 bg-white border border-slate-200 rounded-xl px-4 text-xs font-black uppercase tracking-widest text-slate-600 outline-none focus:border-blue-500 shadow-sm"
-                      value={sortBy}
+                      value={sortBy || 'timestamp'}
                       onChange={e => setSortBy(e.target.value as any)}
                     >
                       <option value="timestamp">Sort by Date</option>
@@ -1332,6 +1581,27 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
             </div>
             <div className="grid-row">
               <div className="grid-cell col-index">3</div>
+              <div className="grid-cell flex-none w-[35%] bold-900 uppercase">LOTO Mode assigned for task:</div>
+              <div className="grid-cell flex-1 flex-grow bold-900 uppercase" style={{ color: '#ef4444' }}>
+                MODE {formData.lotoMode || '-'}{formData.lotoMode === '5' ? ' (PERMIT TO WORK - HIGH RISK)' : ''}
+              </div>
+            </div>
+            {formData.lotoMode === '5' && (
+              <>
+                <div className="grid-row">
+                  <div className="grid-cell col-index">4</div>
+                  <div className="grid-cell flex-none w-[35%] bold-900 uppercase">PTW Control Number:</div>
+                  <div className="grid-cell flex-1 flex-grow font-black">{formData.ptwNumber}</div>
+                </div>
+                <div className="grid-row">
+                  <div className="grid-cell col-index">5</div>
+                  <div className="grid-cell flex-none w-[35%] bold-900 uppercase">SME Supervisor:</div>
+                  <div className="grid-cell flex-1 flex-grow font-black">{formData.ptwSme}</div>
+                </div>
+              </>
+            )}
+            <div className="grid-row">
+              <div className="grid-cell col-index">{formData.lotoMode === '5' ? '6' : '4'}</div>
               <div className="grid-cell flex-none w-[35%] bold-900 uppercase">Project Completion</div>
               <div className="grid-cell sub-header w-[12%] center-text" style={{ flex: '0 0 12%' }}>SCHEDULED</div>
               <div className="grid-cell w-[13%] center-text bold-900" style={{ flex: '0 0 13%' }}>{formData.projectCompletion.scheduled}</div>

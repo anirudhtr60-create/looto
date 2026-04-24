@@ -160,7 +160,7 @@ export default function ResultScreen({ assessment, onRestart, onBack, onExit, la
           <aside className="glass-card p-8 bg-white/40 text-left" aria-label={lang === 'en' ? 'Mode legend' : 'मोड लेजेंड'}>
             <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-8">{t.navReference}</h3>
             <div className="space-y-6">
-              {[4, 3, 2, 1, 0].map(id => {
+              {[5, 4, 3, 2, 1, 0].map(id => {
                 const mode = MODES[id as ModeId];
                 if (!mode) return null;
                 return (
@@ -214,7 +214,7 @@ export default function ResultScreen({ assessment, onRestart, onBack, onExit, la
               </div>
            </article>
 
-           {assessment.result === 4 && (
+           {assessment.result === 5 && (
              <article className="glass-card p-8 md:p-14 text-left shadow-2xl bg-gradient-to-br from-red-50 to-white relative mb-8 border-red-200">
                <div className="absolute top-0 right-0 p-8 opacity-10 text-red-600">
                  <Shield size={120} />

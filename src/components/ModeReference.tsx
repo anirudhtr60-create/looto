@@ -120,9 +120,9 @@ export default function ModeReference({ lang, onBack, isLoading }: ModeReference
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="text-sm font-extrabold text-[#0f172a] uppercase tracking-tight">{mode.name}</span>
-                      <Tooltip content={`${lang === 'en' ? 'Severity Level' : 'गंभीरता स्तर'}: ${id}/4`}>
+                      <Tooltip content={`${lang === 'en' ? 'Severity Level' : 'गंभीरता स्तर'}: ${id}/5`}>
                         <div className="flex gap-0.5 cursor-help" role="img" aria-label={`${lang === 'en' ? 'Severity level' : 'गंभीरता स्तर'}: ${id}`}>
-                          {[...Array(5)].map((_, i) => (
+                          {[...Array(6)].map((_, i) => (
                             <div 
                               key={i} 
                               className={`w-1.5 h-1.5 rounded-full ${i <= (id) ? '' : 'opacity-20'}`}

@@ -169,6 +169,50 @@ export const MODES: Record<number, Mode> = {
   },
   4: {
     id: 4,
+    name: 'SPECIFIC SOP',
+    color: '#eab308',
+    bgColor: 'rgba(234, 179, 8, 0.1)',
+    borderColor: 'rgba(234, 179, 8, 0.2)',
+    icon: 'BookOpen',
+    translations: {
+      en: {
+        title: 'Specific SOP',
+        description: 'Mode 4 is utilized for tasks that are frequent, well-understood, and governed by a specific, validated Standard Operating Procedure (SOP). This mode often involves specialized safety controls (like jog enabled via safety PLC) that are verified by the machine manufacturer or an Internal SME. Operators must be specifically certified to perform tasks under this protocol.',
+        requirements: [
+          'STOP THE MACHINE completely before starting work',
+          'Apply FULL LOTO (Lockout/Tagout) procedures as per context',
+          'Manage the task with a SPECIFIC SOP and trained operator',
+          'Operator MUST be trained and certified on this specific SOP',
+          'Any changes of SOP must be re-validated by SME via risk assessment',
+          'Routine tasks which require a jog mode with steps in user manual of OEM'
+        ],
+        examples: [
+          'Routine tasks which require a jog mode with steps clearly written in SOP',
+          'Tasks as stated in the user manual of the OEM',
+          'Recurring maintenance tasks with an established and reviewed SOP'
+        ]
+      },
+      hi: {
+        title: 'विशिष्ट SOP',
+        description: 'मोड 4 का उपयोग उन कार्यों के लिए किया जाता है जो बार-बार होते हैं, अच्छी तरह से समझे जाते हैं, और एक विशिष्ट, मान्य मानक संचालन प्रक्रिया (SOP) द्वारा शासित होते हैं। इस मोड में अक्सर विशेष सुरक्षा नियंत्रण (जैसे सुरक्षा PLC के माध्यम से जॉग सक्षम) शामिल होते हैं जिन्हें मशीन निर्माता या आंतरिक SME द्वारा सत्यापित किया जाता है। ऑपरेटरों को इस प्रोटोकॉल के तहत कार्य करने के लिए विशेष रूप से प्रमाणित होना चाहिए।',
+        requirements: [
+          'काम शुरू करने से पहले मशीन को पूरी तरह से रोकें',
+          'संदर्भ के अनुसार पूर्ण LOTO (लॉकआउट/टैगआउट) प्रक्रियाएं लागू करें',
+          'विशिष्ट SOP और प्रशिक्षित ऑपरेटर के साथ कार्य का प्रबंधन करें',
+          'ऑपरेटर को इस विशिष्ट SOP पर प्रशिक्षित और प्रमाणित होना चाहिए',
+          'SOP के किसी भी बदलाव को जोखिम मूल्यांकन के माध्यम से SME द्वारा पुन: सत्यापित किया जाना चाहिए',
+          'नियमित कार्य जिनके लिए OEM के मैनुअल में चरणों के साथ जॉग मोड की आवश्यकता होती है'
+        ],
+        examples: [
+          'नियमित कार्य जिनके लिए SOP में स्पष्ट रूप से लिखे चरणों के साथ जॉग मोड की आवश्यकता होती है',
+          'OEM के उपयोगकर्ता नियमावली में बताए अनुसार कार्य',
+          'एक स्थापित और समीक्षा किए गए SOP के साथ आवर्ती रखरखाव कार्य'
+        ]
+      }
+    }
+  },
+  5: {
+    id: 5,
     name: 'PERMIT TO WORK',
     color: '#ef4444',
     bgColor: 'rgba(239, 68, 68, 0.1)',
@@ -176,8 +220,8 @@ export const MODES: Record<number, Mode> = {
     icon: 'ShieldAlert',
     translations: {
       en: {
-        title: 'Mode 4 Permit to Work',
-        description: 'Mode 4 is a critical, high-risk protocol utilized strictly for tasks where equipment must remain energized for direct casualty analysis or live troubleshooting. It demands the highest level of governance, including an active Permit to Work (PTW) and mandatory, continuous on-site supervision by a certified SME. Authorized personnel must be specifically trained for live-work scenarios, as standard LOTO is bypassed.',
+        title: 'Mode 5 Permit to Work',
+        description: 'Mode 5 is a critical, high-risk protocol utilized strictly for tasks where equipment must remain energized for direct casualty analysis or live troubleshooting. It demands the highest level of governance, including an active Permit to Work (PTW) and mandatory, continuous on-site supervision by a certified SME. Authorized personnel must be specifically trained for live-work scenarios, as standard LOTO is bypassed.',
         requirements: [
           'Manage the task strictly with an active PERMIT TO WORK',
           'Task risk assessment must be performed and documented by SME',
@@ -199,8 +243,8 @@ export const MODES: Record<number, Mode> = {
         ]
       },
       hi: {
-        title: 'मोड 4 परमिट टू वर्क',
-        description: 'मोड 4 एक महत्वपूर्ण, उच्च-जोखिम वाला प्रोटोकॉल है जिसका उपयोग विशेष रूप से उन कार्यों के लिए किया जाता है जहाँ उपकरण को प्रत्यक्ष विश्लेषण या लाइव समस्या निवारण के लिए सक्रिय रहना अनिवार्य होता है। यह शासन के उच्चतम स्तर की मांग करता है, जिसमें एक सक्रिय परमिट टू वर्क (PTW) और एक प्रमाणित SME द्वारा अनिवार्य, निरंतर ऑन-साइट पर्यवेक्षण शामिल है। अधिकृत कर्मियों को लाइव-वर्क परिदृश्यों के लिए विशेष रूप से प्रशिक्षित किया जाना चाहिए, क्योंकि मानक LOTO को बायपास किया जाता है।',
+        title: 'मोड 5 परमिट टू वर्क',
+        description: 'मोड 5 एक महत्वपूर्ण, उच्च-जोखिम वाला प्रोटोकॉल है जिसका उपयोग विशेष रूप से उन कार्यों के लिए किया जाता है जहाँ उपकरण को प्रत्यक्ष विश्लेषण या लाइव समस्या निवारण के लिए सक्रिय रहना अनिवार्य होता है। यह शासन के उच्चतम स्तर की मांग करता है, जिसमें एक सक्रिय परमिट टू वर्क (PTW) और एक प्रमाणित SME द्वारा अनिवार्य, निरंतर ऑन-साइट पर्यवेक्षण शामिल है। अधिकृत कर्मियों को लाइव-वर्क परिदृश्यों के लिए विशेष रूप से प्रशिक्षित किया जाना चाहिए, क्योंकि मानक LOTO को बायपास किया जाता है।',
         requirements: [
           'सक्रिय PERMIT टू वर्क के साथ कार्य का सख्ती से प्रबंधन करें',
           'कार्य जोखिम मूल्यांकन SME द्वारा किया और प्रलेखित किया जाना चाहिए',
@@ -209,7 +253,7 @@ export const MODES: Record<number, Mode> = {
           'स्पष्ट सुरक्षा सीमाएं और संचार प्रोटोकॉल स्थापित करें'
         ],
         requirementTooltips: [
-          'एक औपचारिक, हस्ताक्षरित दस्तावेज़ जो मानक सुरक्षा तालों को बायपास करने वाले उच्च-जोखिम वाले कार्य को अधिकृत करता है।',
+          'एक औपचारिक, हस्ताष्ारित दस्तावेज़ जो मानक सुरक्षा तालों को बायपास करने वाले उच्च-जोखिम वाले कार्य को अधिकृत करता है।',
           'लाइव समस्या निवारण के दौरान हर संभावित खतरे की पहचान करने वाला विस्तृत सुरक्षित विधि विवरण।',
           'कार्य की पूरी अवधि के दौरान एक पर्यवेक्षक या SME का शारीरिक रूप से उपस्थित होना अनिवार्य है।',
           'केवल तभी उपयोग किया जाता है जब शून्य-ऊर्जा के साथ निदान शक्ति प्राप्त करना तकनीकी रूप से असंभव हो।',
@@ -222,51 +266,8 @@ export const MODES: Record<number, Mode> = {
         ]
       }
     }
-  },
-  5: {
-    id: 5,
-    name: 'SPECIFIC SOP',
-    color: '#eab308',
-    bgColor: 'rgba(234, 179, 8, 0.1)',
-    borderColor: 'rgba(234, 179, 8, 0.2)',
-    icon: 'BookOpen',
-    translations: {
-      en: {
-        title: 'Specific SOP',
-        description: 'Mode 5 is utilized for tasks that are frequent, well-understood, and governed by a specific, validated Standard Operating Procedure (SOP). This mode often involves specialized safety controls (like jog enabled via safety PLC) that are verified by the machine manufacturer or an Internal SME. Operators must be specifically certified to perform tasks under this protocol.',
-        requirements: [
-          'STOP THE MACHINE completely before starting work',
-          'Apply FULL LOTO (Lockout/Tagout) procedures as per context',
-          'Manage the task with a SPECIFIC SOP and trained operator',
-          'Operator MUST be trained and certified on this specific SOP',
-          'Any changes of SOP must be re-validated by SME via risk assessment',
-          'Routine tasks which require a jog mode with steps in user manual of OEM'
-        ],
-        examples: [
-          'Routine tasks which require a jog mode with steps clearly written in SOP',
-          'Tasks as stated in the user manual of the OEM',
-          'Recurring maintenance tasks with an established and reviewed SOP'
-        ]
-      },
-      hi: {
-        title: 'विशिष्ट SOP',
-        description: 'मोड 5 का उपयोग उन कार्यों के लिए किया जाता है जो बार-बार होते हैं, अच्छी तरह से समझे जाते हैं, और एक विशिष्ट, मान्य मानक संचालन प्रक्रिया (SOP) द्वारा शासित होते हैं। इस मोड में अक्सर विशेष सुरक्षा नियंत्रण (जैसे सुरक्षा PLC के माध्यम से जॉग सक्षम) शामिल होते हैं जिन्हें मशीन निर्माता या आंतरिक SME द्वारा सत्यापित किया जाता है। ऑपरेटरों को इस प्रोटोकॉल के तहत कार्य करने के लिए विशेष रूप से प्रमाणित होना चाहिए।',
-        requirements: [
-          'काम शुरू करने से पहले मशीन को पूरी तरह से रोकें',
-          'संदर्भ के अनुसार पूर्ण LOTO (लॉकआउट/टैगआउट) प्रक्रियाएं लागू करें',
-          'विशिष्ट SOP और प्रशिक्षित ऑपरेटर के साथ कार्य का प्रबंधन करें',
-          'ऑपरेटर को इस विशिष्ट SOP पर प्रशिक्षित और प्रमाणित होना चाहिए',
-          'SOP के किसी भी बदलाव को जोखिम मूल्यांकन के माध्यम से SME द्वारा पुन: सत्यापित किया जाना चाहिए',
-          'नियमित कार्य जिनके लिए OEM के मैनुअल में चरणों के साथ जॉग मोड की आवश्यकता होती है'
-        ],
-        examples: [
-          'नियमित कार्य जिनके लिए SOP में स्पष्ट रूप से लिखे चरणों के साथ जॉग मोड की आवश्यकता होती है',
-          'OEM के उपयोगकर्ता नियमावली में बताए अनुसार कार्य',
-          'एक स्थापित और समीक्षा किए गए SOP के साथ आवर्ती रखरखाव कार्य'
-        ]
-      }
-    }
   }
+
 };
 
 export const QUESTIONS: Record<string, Question> = {
@@ -359,7 +360,7 @@ export const QUESTIONS: Record<string, Question> = {
 export const DECISION_TREE: Record<string, DecisionNode> = {
   Q1: { id: 'Q1', yes: { type: 'question', id: 'Q2' }, no: { type: 'question', id: 'Q4' } },
   Q2: { id: 'Q2', yes: { type: 'question', id: 'Q3' }, no: { type: 'result', modeId: 3 } },
-  Q3: { id: 'Q3', yes: { type: 'result', modeId: 5 }, no: { type: 'result', modeId: 4 } },
+  Q3: { id: 'Q3', yes: { type: 'result', modeId: 4 }, no: { type: 'result', modeId: 5 } },
   Q4: { id: 'Q4', yes: { type: 'result', modeId: 3 }, no: { type: 'question', id: 'Q5' } },
   Q5: { id: 'Q5', yes: { type: 'result', modeId: 1 }, no: { type: 'question', id: 'Q6' } },
   Q6: { id: 'Q6', yes: { type: 'result', modeId: 2 }, no: { type: 'result', modeId: 0 } }
