@@ -162,12 +162,20 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col font-sans transition-colors duration-300 bg-slate-50">
+    <div className="min-h-screen flex flex-col font-sans transition-colors duration-300 bg-slate-50 relative overflow-hidden">
       <a href="#main-content" className="skip-link">
         {lang === 'en' ? 'Skip to content' : 'सामग्री पर जाएँ'}
       </a>
+
+      {/* Decorative Background Elements */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-blue-100/50 rounded-full blur-[120px] animate-pulse-slow" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-green-100/50 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-grid opacity-[0.03]" />
+      </div>
+
       {/* Navigation Header */}
-      <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-2xl border-b border-slate-100 shadow-sm">
+      <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-2xl border-b border-slate-100 shadow-sm relative">
         <div className="max-w-7xl mx-auto px-6 h-auto md:h-24 flex flex-col md:flex-row items-center justify-between gap-6 py-4 md:py-0">
           <div className="flex items-center gap-4 self-start md:self-auto">
             <button 
@@ -190,7 +198,7 @@ export default function App() {
           </div>
           
           <div className="flex items-center justify-between w-full md:w-auto gap-3">
-            <div className="flex bg-slate-100/80 p-2 rounded-[1.5rem] flex-1 md:flex-none justify-between md:justify-start shadow-inner border border-white" role="tablist">
+            <div className="flex bg-slate-100/80 p-1.5 rounded-[1.5rem] flex-1 md:flex-none justify-between md:justify-start shadow-inner border border-white relative" role="tablist">
               <Tooltip content={t.navDecision}>
                 <button
                   role="tab"
@@ -198,13 +206,20 @@ export default function App() {
                   aria-controls="panel-decision"
                   aria-selected={activeTab === 'decision'}
                   onClick={() => { handleTabChange('decision'); setAssessment(null); }}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 ${
+                  className={`relative flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 z-10 ${
                     activeTab === 'decision' 
-                    ? 'bg-white text-[#0f172a] shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-black/5' 
+                    ? 'text-[#0f172a]' 
                     : 'text-slate-500 hover:text-slate-950'
                   }`}
                   aria-label={t.navDecision}
                 >
+                  {activeTab === 'decision' && (
+                    <motion.div 
+                      layoutId="nav-pill"
+                      className="absolute inset-0 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-black/5 rounded-2xl z-[-1]"
+                      transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
+                    />
+                  )}
                   <ClipboardList size={16} aria-hidden="true" />
                   <span className="hidden md:inline">{t.navDecision}</span>
                 </button>
@@ -216,13 +231,20 @@ export default function App() {
                   aria-controls="panel-reference"
                   aria-selected={activeTab === 'reference'}
                   onClick={() => handleTabChange('reference')}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 ${
+                  className={`relative flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 z-10 ${
                     activeTab === 'reference' 
-                    ? 'bg-white text-[#0f172a] shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-black/5' 
+                    ? 'text-[#0f172a]' 
                     : 'text-slate-500 hover:text-slate-950'
                   }`}
                   aria-label={t.navReference}
                 >
+                  {activeTab === 'reference' && (
+                    <motion.div 
+                      layoutId="nav-pill"
+                      className="absolute inset-0 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-black/5 rounded-2xl z-[-1]"
+                      transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
+                    />
+                  )}
                   <BookOpen size={16} aria-hidden="true" />
                   <span className="hidden lg:inline">{t.navReference}</span>
                 </button>
@@ -234,13 +256,20 @@ export default function App() {
                   aria-controls="panel-history"
                   aria-selected={activeTab === 'history'}
                   onClick={() => handleTabChange('history')}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 ${
+                  className={`relative flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900 z-10 ${
                     activeTab === 'history' 
-                    ? 'bg-white text-[#0f172a] shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-black/5' 
+                    ? 'text-[#0f172a]' 
                     : 'text-slate-500 hover:text-slate-950'
                   }`}
                   aria-label={t.navHistory}
                 >
+                  {activeTab === 'history' && (
+                    <motion.div 
+                      layoutId="nav-pill"
+                      className="absolute inset-0 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-black/5 rounded-2xl z-[-1]"
+                      transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
+                    />
+                  )}
                   <HistoryIcon size={16} aria-hidden="true" />
                   <span className="hidden lg:inline">{t.navHistory}</span>
                 </button>

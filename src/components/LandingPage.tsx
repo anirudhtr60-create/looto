@@ -51,7 +51,25 @@ export default function LandingPage({ onStart, lang, onBack }: LandingPageProps)
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-16 px-6 text-left">
+    <div className="max-w-5xl mx-auto py-16 px-6 text-left relative">
+      {/* Background Floating Elements */}
+      <div className="absolute inset-0 pointer-events-none -z-10">
+        <motion.div 
+          animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[20%] right-[10%] text-slate-100 opacity-20"
+        >
+          <Shield size={120} />
+        </motion.div>
+        <motion.div 
+          animate={{ y: [0, 20, 0], x: [0, -10, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute bottom-[20%] left-[5%] text-slate-100 opacity-20"
+        >
+          <Shield size={80} />
+        </motion.div>
+      </div>
+
       <motion.div 
         variants={containerVariants}
         initial="hidden"
@@ -74,19 +92,17 @@ export default function LandingPage({ onStart, lang, onBack }: LandingPageProps)
                 {lang === 'en' ? 'Home' : 'होम'}
               </button>
             </div>
-            
-            <button 
-              onClick={onBack}
-              className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-slate-900 transition-colors"
-            >
-              <ArrowLeft size={14} />
-              {lang === 'en' ? 'Back to Portal' : 'पोर्टल पर वापस'}
-            </button>
           </motion.div>
           
           <motion.h1 variants={itemVariants} className="text-6xl md:text-8xl font-display font-black text-[#0f172a] leading-[0.85] tracking-tighter max-w-4xl">
             {lang === 'en' ? 'ASSESS THE' : 'आकलन करें'} <br/>
-            <span className="text-[#16a34a]">{lang === 'en' ? 'RISK' : 'जोखिम'}</span>
+            <motion.span 
+              animate={{ color: ['#16a34a', '#15803d', '#16a34a'] }}
+              transition={{ duration: 4, repeat: Infinity }}
+              className="text-[#16a34a]"
+            >
+              {lang === 'en' ? 'RISK' : 'जोखिम'}
+            </motion.span>
             <span className="text-slate-300 ml-4 font-normal">/</span>
             <span className="ml-4">{lang === 'en' ? 'SAVE LIVES' : 'जान बचाएं'}</span>
           </motion.h1>
@@ -100,7 +116,11 @@ export default function LandingPage({ onStart, lang, onBack }: LandingPageProps)
 
         <motion.section variants={itemVariants} className="space-y-8">
           <div className="relative group">
-            <div className="absolute inset-0 bg-green-500/5 blur-3xl group-focus-within:bg-green-500/10 transition-colors pointer-events-none rounded-full" />
+            <motion.div 
+              animate={{ scale: [1, 1.02, 1], opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 4, repeat: Infinity }}
+              className="absolute inset-0 bg-green-500/5 blur-3xl group-focus-within:bg-green-500/10 transition-colors pointer-events-none rounded-full" 
+            />
             <div className="relative">
               <div className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-300">
                 <Search size={32} />
@@ -110,14 +130,14 @@ export default function LandingPage({ onStart, lang, onBack }: LandingPageProps)
                 value={activity}
                 onChange={(e) => setActivity(e.target.value)}
                 placeholder={lang === 'en' ? "Maintenance activity description..." : "रखरखाव गतिविधि विवरण..."}
-                className="w-full h-24 md:h-28 bg-white border-2 border-slate-100 rounded-[2.5rem] pl-24 pr-12 text-2xl md:text-3xl font-display font-bold text-slate-900 placeholder:text-slate-200 transition-all focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none shadow-xl shadow-slate-900/5"
+                className="w-full h-24 md:h-28 bg-white border-2 border-slate-100 rounded-[2.5rem] pl-24 pr-12 text-2xl md:text-3xl font-display font-bold text-slate-900 placeholder:text-slate-200 transition-all focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none shadow-xl shadow-slate-900/5 group-hover:border-slate-200"
               />
               <motion.button
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.05, x: 5 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => activity.trim() && onStart(activity)}
                 disabled={!activity.trim()}
-                className="absolute right-4 top-1/2 -translate-y-1/2 px-10 h-16 md:h-20 bg-[#0f172a] text-white rounded-[1.8rem] font-black text-sm uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-slate-900/40 disabled:opacity-30 disabled:pointer-events-none transition-all hover:bg-[#16a34a]"
+                className="absolute right-4 top-1/2 -translate-y-1/2 px-10 h-16 md:h-20 bg-[#0f172a] text-white rounded-[1.8rem] font-black text-sm uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-slate-900/40 disabled:opacity-30 disabled:pointer-events-none transition-all hover:bg-[#16a34a] hover:shadow-green-500/25"
               >
                 {t.startAssessment}
                 <ArrowRight size={20} />

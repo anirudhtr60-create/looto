@@ -96,16 +96,33 @@ export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart, 
       </div>
 
       <div className="mb-12" role="progressbar" aria-valuenow={currentStepNum} aria-valuemin={1} aria-valuemax={totalSteps} aria-label={lang === 'en' ? 'Assessment progress' : 'मूल्यांकन प्रगति'}>
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex gap-1.5 align-center">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex gap-2 align-center flex-1 mr-8">
             {[...Array(totalSteps)].map((_, i) => (
               <div 
                 key={i} 
-                className={`w-10 h-1.5 bg-[#0f172a] rounded-full transition-all duration-300 ${i < currentStepNum ? 'opacity-100' : 'opacity-10'}`}
-              />
+                className="h-1.5 flex-1 bg-slate-200 rounded-full overflow-hidden"
+              >
+                <motion.div 
+                  initial={false}
+                  animate={{ 
+                    width: i < currentStepNum ? '100%' : '0%',
+                    backgroundColor: i < currentStepNum ? '#16a34a' : '#e2e8f0'
+                  }}
+                  transition={{ duration: 0.5, ease: "circOut" }}
+                  className="h-full rounded-full"
+                />
+              </div>
             ))}
           </div>
-          <span className="text-xs font-bold text-slate-600 uppercase tracking-tighter">{t.step} {currentStepNum} {t.of} {totalSteps}</span>
+          <motion.span 
+            key={currentStepNum}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap"
+          >
+            {t.step} {currentStepNum} {t.of} {totalSteps}
+          </motion.span>
         </div>
       </div>
 
@@ -113,33 +130,46 @@ export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart, 
       <AnimatePresence mode="wait">
         <motion.div
           key={assessment.currentStepId}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.3 }}
-          className="glass-card p-10 md:p-14 mb-8"
+          initial={{ opacity: 0, y: 20, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -20, scale: 0.98 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="glass-card p-10 md:p-14 mb-8 relative overflow-hidden group shadow-2xl shadow-slate-900/5 hover:shadow-slate-900/10 transition-shadow border-slate-100"
         >
-          <div className="flex flex-col gap-6">
+          {/* Subtle background glow */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 blur-3xl -translate-y-1/2 translate-x-1/2 rounded-full" />
+          
+          <div className="flex flex-col gap-6 relative z-10">
             <div className="flex items-center gap-4">
-            <Tooltip content={qT.helperText || ''}>
-              <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-[#0f172a] shadow-sm cursor-help">
-                <QuestionIcon size={24} aria-hidden="true" />
+              <Tooltip content={qT.helperText || ''}>
+                <motion.div 
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  className="w-14 h-14 bg-[#0f172a] text-white rounded-[1.2rem] flex items-center justify-center shadow-xl shadow-slate-900/20 cursor-help"
+                >
+                  <QuestionIcon size={28} aria-hidden="true" />
+                </motion.div>
+              </Tooltip>
+              <div className="flex flex-col">
+                <span className="badge bg-green-50 text-green-700 border border-green-100">
+                  {lang === 'en' ? 'Critical Safety Check' : 'महत्वपूर्ण सुरक्षा जांच'}
+                </span>
               </div>
-            </Tooltip>
-              <span className="badge bg-[#dcfce7] text-[#166534]">
-                {lang === 'en' ? 'Assessment' : 'मूल्यांकन'}
-              </span>
             </div>
             
             <div className="flex flex-col">
-              <h1 className="text-3xl md:text-4xl font-extrabold text-[#0f172a] leading-tight mb-4 tracking-tight min-h-[80px]">
+              <motion.h1 
+                className="text-3xl md:text-5xl font-display font-black text-[#0f172a] leading-[1.1] mb-6 tracking-tighter min-h-[100px]"
+              >
                 {qT.text}
-              </h1>
+              </motion.h1>
               
               {qT.helperText && (
-                <p className="text-lg text-slate-700 font-bold leading-relaxed max-w-2xl">
-                  {qT.helperText}
-                </p>
+                <div className="flex items-start gap-3 p-4 bg-slate-50/80 rounded-2xl border border-slate-100/50">
+                  <HelpCircle size={18} className="text-slate-400 mt-0.5 shrink-0" />
+                  <p className="text-sm md:text-base text-slate-500 font-semibold leading-relaxed">
+                    {qT.helperText}
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -148,27 +178,45 @@ export default function DecisionFlow({ assessment, onAnswer, onBack, onRestart, 
 
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-4 md:gap-8">
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02, y: -4 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => onAnswer(true)}
-          className="btn-yes flex flex-col items-center justify-center gap-2 md:gap-4 p-6 md:p-10 rounded-[2.5rem] min-h-[140px] md:h-52 group outline-none ring-offset-4"
+          className="btn-yes flex flex-col items-center justify-center gap-2 md:gap-4 p-8 md:p-12 rounded-[2.5rem] min-h-[160px] md:h-60 group outline-none ring-offset-4 shadow-xl shadow-green-500/10 hover:shadow-green-500/20"
           aria-label={`${t.yes}: ${lang === 'en' ? 'Confirm state is true' : 'पुष्टि करें कि स्थिति सत्य है'}`}
         >
-          <span className="text-3xl md:text-5xl font-black transition-transform group-hover:scale-110">{t.yes}</span>
-          <span className="text-[10px] md:text-xs font-black opacity-50 uppercase tracking-[0.2em] group-hover:opacity-100 transition-opacity">
-            {lang === 'en' ? 'Select Yes' : 'हाँ चुनें'}
-          </span>
-        </button>
+          <motion.div 
+            animate={{ scale: [1, 1.1, 1] }} 
+            transition={{ duration: 2, repeat: Infinity }}
+            className="text-4xl md:text-6xl font-black text-[#065f46] tracking-tighter"
+          >
+            {t.yes}
+          </motion.div>
+          <div className="flex items-center gap-2 text-[10px] md:text-xs font-black opacity-40 uppercase tracking-[0.25em] group-hover:opacity-100 group-hover:text-[#065f46] transition-all">
+            <span>{lang === 'en' ? 'Yes' : 'हाँ'}</span>
+            <MoveRight size={14} className="group-hover:translate-x-1 transition-transform" />
+          </div>
+        </motion.button>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02, y: -4 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => onAnswer(false)}
-          className="btn-no flex flex-col items-center justify-center gap-2 md:gap-4 p-6 md:p-10 rounded-[2.5rem] min-h-[140px] md:h-52 group outline-none ring-offset-4"
+          className="btn-no flex flex-col items-center justify-center gap-2 md:gap-4 p-8 md:p-12 rounded-[2.5rem] min-h-[160px] md:h-60 group outline-none ring-offset-4 shadow-xl shadow-red-500/10 hover:shadow-red-500/20"
           aria-label={`${t.no}: ${lang === 'en' ? 'Confirm state is false' : 'पुष्टि करें कि स्थिति असत्य है'}`}
         >
-          <span className="text-3xl md:text-5xl font-black transition-transform group-hover:scale-110">{t.no}</span>
-          <span className="text-[10px] md:text-xs font-black opacity-50 uppercase tracking-[0.2em] group-hover:opacity-100 transition-opacity">
-            {lang === 'en' ? 'Select No' : 'नहीं चुनें'}
-          </span>
-        </button>
+          <motion.div 
+            animate={{ scale: [1, 1.1, 1] }} 
+            transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+            className="text-4xl md:text-6xl font-black text-[#991b1b] tracking-tighter"
+          >
+            {t.no}
+          </motion.div>
+          <div className="flex items-center gap-2 text-[10px] md:text-xs font-black opacity-40 uppercase tracking-[0.25em] group-hover:opacity-100 group-hover:text-[#991b1b] transition-all">
+            <span>{lang === 'en' ? 'No' : 'नहीं'}</span>
+            <MoveRight size={14} className="group-hover:translate-x-1 transition-transform" />
+          </div>
+        </motion.button>
       </div>
 
       <div className="mt-12 flex justify-center">

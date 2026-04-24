@@ -63,20 +63,19 @@ export default function HistoryView({ history, lang, onClear, onBack, onViewDeta
     let filename: string;
 
     if (format === 'json') {
-      const jsonString = JSON.stringify(history, null, 2);
+      const cleanedHistory = history.map(({ id, timestamp, ...rest }) => rest);
+      const jsonString = JSON.stringify(cleanedHistory, null, 2);
       blob = new Blob([jsonString], { type: 'application/json' });
-      filename = `loto_history_${Date.now()}.json`;
+      filename = `loto_history.json`;
     } else {
       const headers = lang === 'en' 
-        ? ['ID', 'Activity', 'Timestamp', 'Date', 'Result Mode', 'Language', 'Decision Path']
-        : ['आईडी', 'गतिविधि', 'टाइमस्टैम्प', 'दिनांक', 'रिजल्ट मोड', 'भाषा', 'निर्णय पथ'];
+        ? ['Activity', 'Date', 'Result Mode', 'Language', 'Decision Path']
+        : ['गतिविधि', 'दिनांक', 'रिजल्ट मोड', 'भाषा', 'निर्णय पथ'];
           const rows = history.map(rec => {
             const pathStr = rec.path?.map(p => `${p.questionId}:${p.answer ? 'YES' : 'NO'}`).join(' | ') || '';
             const mode = MODES[rec.result];
             return [
-              rec.id,
               `"${rec.activity.replace(/"/g, '""')}"`,
-              rec.timestamp,
               new Date(rec.timestamp).toISOString(),
               mode ? mode.name : `Mode ${rec.result}`,
               rec.language,
@@ -85,7 +84,7 @@ export default function HistoryView({ history, lang, onClear, onBack, onViewDeta
           });
       const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
       blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      filename = `loto_history_${Date.now()}.csv`;
+      filename = `loto_history.csv`;
     }
 
     const link = document.createElement('a');

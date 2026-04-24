@@ -75,8 +75,9 @@ export default function ResultScreen({ assessment, onRestart, onBack, onExit, la
         </button>
       </div>
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="mb-12"
       >
         <div className="flex items-center gap-4 mb-4">
@@ -90,203 +91,307 @@ export default function ResultScreen({ assessment, onRestart, onBack, onExit, la
             </button>
           </Tooltip>
           <div>
-            <h2 className="text-xs font-bold text-slate-600 uppercase tracking-widest block">{t.results}</h2>
-            <h1 className="text-2xl font-extrabold text-slate-900 leading-tight">
-              {t.resultsFor}: <span className="text-blue-600 underline underline-offset-4 decoration-blue-200">{assessment.activity}</span>
+            <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">{t.results}</h2>
+            <h1 className="text-2xl md:text-3xl font-display font-black text-[#0f172a] leading-tight flex items-center gap-3">
+              <span className="opacity-50 font-normal">{t.resultsFor}</span> 
+              <span className="text-[#16a34a] tracking-tight">{assessment.activity}</span>
             </h1>
           </div>
         </div>
 
         {/* Major Result Card */}
-        <section className="glass-card overflow-hidden p-10 md:p-14 shadow-2xl transition-all relative" aria-labelledby="result-title">
-          <div className="flex flex-col md:flex-row gap-10 items-start">
-            <Tooltip content={modeT.title}>
-              <div 
-                className="w-20 h-20 rounded-2xl flex items-center justify-center text-white shadow-xl rotate-3 shrink-0 cursor-help"
-                style={{ backgroundColor: resultMode.color }}
-                aria-hidden="true"
+        <motion.section 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="glass-card overflow-hidden p-10 md:p-14 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.06)] relative bg-white border-slate-100/50" 
+          aria-labelledby="result-title"
+        >
+          {/* Decorative background glow based on result color */}
+          <div 
+            className="absolute top-0 right-0 w-64 h-64 blur-[100px] opacity-10 -translate-y-1/2 translate-x-1/2 rounded-full"
+            style={{ backgroundColor: resultMode.color }}
+          />
+          
+          <div className="flex flex-col md:flex-row gap-10 items-start relative z-10">
+            <motion.div 
+              initial={{ rotate: -15, scale: 0.5, opacity: 0 }}
+              animate={{ rotate: 3, scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', bounce: 0.4, duration: 0.8, delay: 0.3 }}
+              className="w-24 h-24 md:w-32 md:h-32 rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl shrink-0 cursor-help relative group"
+              style={{ backgroundColor: resultMode.color }}
+              aria-hidden="true"
+            >
+              <motion.div 
+                animate={{ scale: [1, 1.1, 1] }} 
+                transition={{ duration: 3, repeat: Infinity }}
               >
-                <ResultIcon size={40} />
-              </div>
-            </Tooltip>
+                <ResultIcon size={56} className="md:w-14 md:h-14" />
+              </motion.div>
+              <div className="absolute inset-0 bg-white/20 rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity blur-[2px]" />
+            </motion.div>
 
             <div className="flex-1">
-              <div className="flex flex-col mb-6 text-left">
-                <span className="badge w-fit mb-3" style={{ backgroundColor: `${resultMode.color}20`, color: resultMode.color }}>
-                  {lang === 'en' ? 'Recommended Action' : 'अनुशंसित कार्रवाई'}
-                </span>
-                <h2 id="result-title" className="text-4xl md:text-5xl font-extrabold text-[#0f172a] tracking-tight leading-none mb-3 flex items-center gap-4">
-                  <span className="text-blue-600">Mode {resultMode.id}:</span> {resultMode.name}
+              <div className="flex flex-col mb-8 text-left">
+                <motion.span 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="badge w-fit mb-4" 
+                  style={{ backgroundColor: `${resultMode.color}20`, color: resultMode.color }}
+                >
+                  {lang === 'en' ? 'Protocol Issued' : 'प्रोटोकॉल जारी'}
+                </motion.span>
+                <h2 id="result-title" className="text-4xl md:text-6xl font-display font-black text-[#0f172a] tracking-tighter leading-none mb-4">
+                  <span className="opacity-20">{lang === 'en' ? 'Mode' : 'मोड'} {resultMode.id}:</span> {resultMode.name}
                 </h2>
-                <p className="text-xl md:text-2xl font-black text-slate-600 tracking-tight">
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="text-xl md:text-3xl font-black text-[#16a34a] tracking-tight"
+                >
                   {modeT.title}
-                </p>
+                </motion.p>
               </div>
               
-              <p className="text-lg text-slate-700 font-medium leading-relaxed max-w-2xl mb-10 text-left">
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7 }}
+                className="text-lg md:text-xl text-slate-500 font-bold leading-relaxed max-w-2xl mb-12 text-left"
+              >
                 {modeT.description}
-              </p>
+              </motion.p>
 
               <div className="flex flex-wrap gap-4">
-                <Tooltip content={t.restart}>
-                  <button 
-                    onClick={onRestart}
-                    className="btn-primary"
-                    aria-label={t.restart}
-                  >
-                    <div className="flex items-center gap-2">
-                      <RotateCcw size={18} aria-hidden="true" />
-                      {t.restart}
-                    </div>
-                  </button>
-                </Tooltip>
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={onRestart}
+                  className="px-8 py-4 bg-[#0f172a] text-white rounded-[1.5rem] font-black text-sm uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-slate-900/30 hover:bg-[#16a34a] transition-all"
+                  aria-label={t.restart}
+                >
+                  <RotateCcw size={20} aria-hidden="true" />
+                  {t.restart}
+                </motion.button>
               </div>
             </div>
           </div>
-        </section>
+        </motion.section>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
         {/* Sidebar info */}
-        <div className="lg:col-span-4 flex flex-col gap-6 order-2 lg:order-1">
-          <aside className="glass-card p-6 md:p-8 bg-white/40 text-left border-l-4 border-blue-500 shadow-lg" aria-label={lang === 'en' ? 'Assessment summary' : 'मूल्यांकन सारांश'}>
-             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">
+        <div className="lg:col-span-4 flex flex-col gap-8 order-2 lg:order-1">
+          <motion.aside 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.8 }}
+            className="glass-card p-8 bg-white/40 text-left border-l-4 border-[#16a34a] shadow-xl overflow-hidden relative" 
+            aria-label={lang === 'en' ? 'Assessment summary' : 'मूल्यांकन सारांश'}
+          >
+             <div className="absolute top-0 right-0 w-32 h-32 bg-[#16a34a]/5 blur-2xl -translate-y-1/2 translate-x-1/2 rounded-full" />
+             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
                {lang === 'en' ? 'Current Activity' : 'वर्तमान कार्य'}
              </span>
-             <p className="text-xl font-black text-[#0f172a] mb-6 leading-tight">{assessment.activity}</p>
-             <button onClick={onRestart} className="text-xs font-black text-red-600 hover:text-red-700 uppercase tracking-widest p-2 bg-red-50 rounded-lg focus-visible:ring-2 focus-visible:ring-red-600 outline-none w-full md:w-auto transition-colors">{t.reset}</button>
-          </aside>
+             <p className="text-2xl font-display font-black text-[#0f172a] mb-8 leading-tight relative z-10">{assessment.activity}</p>
+             <button onClick={onRestart} className="text-[10px] font-black text-[#065f46] hover:text-white uppercase tracking-widest px-6 py-2 bg-green-50 hover:bg-[#16a34a] rounded-full focus-visible:ring-2 focus-visible:ring-[#16a34a] outline-none transition-all relative z-10">{t.reset}</button>
+          </motion.aside>
 
-          <aside className="glass-card p-8 bg-white/40 text-left" aria-label={lang === 'en' ? 'Mode legend' : 'मोड लेजेंड'}>
-            <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-8">{t.navReference}</h3>
-            <div className="space-y-6">
-              {[5, 4, 3, 2, 1, 0].map(id => {
+          <motion.aside 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.9 }}
+            className="glass-card p-10 bg-white/40 text-left relative overflow-hidden" 
+            aria-label={lang === 'en' ? 'Mode legend' : 'मोड लेजेंड'}
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 bg-slate-100 blur-2xl -translate-y-1/2 translate-x-1/2 rounded-full" />
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] mb-10">{t.navReference}</h3>
+            <div className="space-y-8">
+              {[5, 4, 3, 2, 1, 0].map((id, i) => {
                 const mode = MODES[id as ModeId];
                 if (!mode) return null;
+                const isActive = id === assessment.result;
                 return (
-                  <div key={id} className="flex items-center gap-4">
-                    <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: mode.color }} aria-hidden="true" />
+                  <motion.div 
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1 + (i * 0.1) }}
+                    key={id} 
+                    className={`flex items-center gap-5 transition-all ${isActive ? 'scale-110 origin-left translate-x-2' : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0'}`}
+                  >
+                    <div className="w-4 h-4 rounded-full shadow-lg" style={{ backgroundColor: mode.color }} aria-hidden="true" />
                     <div className="flex flex-col">
-                        <span className="text-xs font-black text-[#0f172a] uppercase tracking-wider">
+                        <span className={`text-xs font-black tracking-widest uppercase ${isActive ? 'text-[#0f172a]' : 'text-slate-500'}`}>
                           {lang === 'en' ? `Mode ${id}` : `मोड ${id}`}
                         </span>
-                        {id === assessment.result && (
-                          <span className="text-[9px] text-blue-600 font-black uppercase tracking-tighter mt-0.5">
+                        {isActive && (
+                          <span className="text-[9px] text-[#16a34a] font-black uppercase tracking-tighter mt-1">
                             {lang === 'en' ? 'ACTIVE SELECTION' : 'सक्रिय चयन'}
                           </span>
                         )}
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
-          </aside>
+          </motion.aside>
         </div>
 
         {/* Main Content */}
-        <div className="lg:col-span-8 order-1 lg:order-2">
-            <article className="glass-card p-8 md:p-14 text-left shadow-2xl bg-white/60 relative mb-8">
-              <div className="absolute top-0 right-0 p-8 opacity-5">
-                <CheckCircle2 size={120} />
+        <div className="lg:col-span-8 order-1 lg:order-2 space-y-8">
+            <motion.article 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="glass-card p-10 md:p-14 text-left shadow-2xl bg-white/70 relative border-slate-100"
+            >
+              <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-[#16a34a]">
+                <CheckCircle2 size={240} />
               </div>
-              <span className="badge bg-[#dcfce7] text-[#166534] mb-6 inline-block font-black text-[10px] tracking-widest uppercase">{t.requirements}</span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#0f172a] mb-10 tracking-tighter leading-none">{t.howToProceed}</h2>
-              
-              <div className="space-y-8">
-                {(modeT.requirements || []).map((req, idx) => (
-                  <div key={idx} className="flex gap-5 items-start group">
-                    <div className="w-7 h-7 rounded-lg bg-green-100 flex items-center justify-center shrink-0 mt-1 shadow-sm transition-transform group-hover:scale-110" aria-hidden="true">
-                      <Check size={16} className="text-green-700" strokeWidth={4} />
-                    </div>
-                    <div className="flex-1">
-                       {modeT.requirementTooltips && modeT.requirementTooltips[idx] ? (
-                         <Tooltip content={modeT.requirementTooltips[idx]}>
-                           <p className="text-lg md:text-xl text-slate-800 font-bold leading-relaxed cursor-help border-b border-dotted border-slate-300 inline-block decoration-green-500/30">
-                             {req}
-                           </p>
-                         </Tooltip>
-                       ) : (
-                         <p className="text-lg md:text-xl text-slate-800 font-bold leading-relaxed">{req}</p>
-                       )}
-                    </div>
-                  </div>
-                ))}
+              <div className="relative z-10">
+                <span className="badge bg-green-50 text-green-700 border border-green-100 mb-6 inline-block font-black text-[10px] tracking-widest uppercase">{t.requirements}</span>
+                <h2 className="text-4xl md:text-5xl font-display font-black text-[#0f172a] mb-12 tracking-tighter leading-none">{t.howToProceed}</h2>
+                
+                <div className="space-y-10">
+                  {(modeT.requirements || []).map((req, idx) => (
+                    <motion.div 
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 1 + (idx * 0.1) }}
+                      key={idx} 
+                      className="flex gap-6 items-start group"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-green-50 text-green-700 flex items-center justify-center shrink-0 mt-1 shadow-sm transition-all group-hover:bg-[#16a34a] group-hover:text-white group-hover:scale-110 border border-green-100" aria-hidden="true">
+                        <Check size={20} strokeWidth={4} />
+                      </div>
+                      <div className="flex-1">
+                         {modeT.requirementTooltips && modeT.requirementTooltips[idx] ? (
+                           <Tooltip content={modeT.requirementTooltips[idx]}>
+                             <p className="text-xl md:text-2xl text-slate-800 font-bold leading-tight cursor-help border-b border-dotted border-slate-300 inline-block decoration-green-500/30">
+                               {req}
+                             </p>
+                           </Tooltip>
+                         ) : (
+                           <p className="text-xl md:text-2xl text-slate-800 font-bold leading-tight">{req}</p>
+                         )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-           </article>
+           </motion.article>
 
            {assessment.result === 5 && (
-             <article className="glass-card p-8 md:p-14 text-left shadow-2xl bg-gradient-to-br from-red-50 to-white relative mb-8 border-red-200">
-               <div className="absolute top-0 right-0 p-8 opacity-10 text-red-600">
-                 <Shield size={120} />
+             <motion.article 
+               initial={{ opacity: 0, y: 20 }}
+               whileInView={{ opacity: 1, y: 0 }}
+               viewport={{ once: true }}
+               className="glass-card p-10 md:p-14 text-left shadow-2xl bg-gradient-to-br from-red-50 to-white relative overflow-hidden border-red-100"
+             >
+               <div className="absolute top-0 right-0 p-12 opacity-[0.05] text-red-600">
+                 <ShieldAlert size={200} />
                </div>
-               <span className="badge bg-red-600 text-white mb-6 inline-block font-black text-[10px] tracking-widest uppercase">
-                 {lang === 'en' ? 'Critical Control' : 'गंभीर नियंत्रण'}
-               </span>
-               <h3 className="text-3xl md:text-4xl font-extrabold text-red-900 mb-10 tracking-tighter leading-none">
-                 {lang === 'en' ? 'Permit Management Protocol' : 'परमिट प्रबंधन प्रोटोकॉल'}
-               </h3>
-               
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                 <div className="space-y-4">
-                   <h4 className="text-sm font-black text-red-800 uppercase tracking-widest flex items-center gap-2">
-                     <User size={18} />
-                     {lang === 'en' ? 'Authorized Personnel' : 'अधिकृत कर्मचारी'}
-                   </h4>
-                   <ul className="space-y-2 text-slate-700 font-bold">
-                     <li>• {lang === 'en' ? 'Mandatory PTW Training' : 'अनिवार्य PTW प्रशिक्षण'}</li>
-                     <li>• {lang === 'en' ? 'Certified SME Supervision' : 'प्रमाणित SME पर्यवेक्षण'}</li>
-                     <li>• {lang === 'en' ? 'Clear role assignment' : 'स्पष्ट भूमिका असाइनमेंट'}</li>
-                   </ul>
+               <div className="relative z-10">
+                 <span className="badge bg-red-600 text-white mb-6 inline-block font-black text-[10px] tracking-widest uppercase shadow-lg shadow-red-200">
+                   {lang === 'en' ? 'Critical Control' : 'गंभीर नियंत्रण'}
+                 </span>
+                 <h3 className="text-4xl font-display font-black text-[#0f172a] mb-12 tracking-tighter leading-none">
+                   {lang === 'en' ? 'Permit Management Protocol' : 'परमिट प्रबंधन प्रोटोकॉल'}
+                 </h3>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                   <div className="space-y-6">
+                     <h4 className="text-xs font-black text-red-600 uppercase tracking-widest flex items-center gap-3">
+                       <User size={20} className="p-1 bg-red-50 rounded-lg" />
+                       {lang === 'en' ? 'Authorized Personnel' : 'अधिकृत कर्मचारी'}
+                     </h4>
+                     <ul className="space-y-4">
+                       {[
+                         lang === 'en' ? 'Mandatory PTW Training' : 'अनिवार्य PTW प्रशिक्षण',
+                         lang === 'en' ? 'Certified SME Supervision' : 'प्रमाणित SME पर्यवेक्षण',
+                         lang === 'en' ? 'Clear role assignment' : 'स्पष्ट भूमिका असाइनमेंट'
+                       ].map((item, i) => (
+                         <li key={i} className="flex items-center gap-3 text-slate-600 font-bold text-sm">
+                           <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                           {item}
+                         </li>
+                       ))}
+                     </ul>
+                   </div>
+                   <div className="space-y-6">
+                     <h4 className="text-xs font-black text-red-600 uppercase tracking-widest flex items-center gap-3">
+                       <ClipboardList size={20} className="p-1 bg-red-50 rounded-lg" />
+                       {lang === 'en' ? 'Safety Documentation' : 'सुरक्षा दस्तावेज़ीकरण'}
+                     </h4>
+                     <ul className="space-y-4">
+                       {[
+                         lang === 'en' ? 'Approved JHA/Risk Assessment' : 'अनुमोदित JHA/जोखिम मूल्यांकन',
+                         lang === 'en' ? 'Active Permit Document' : 'सक्रिय परमिट दस्तावेज़',
+                         lang === 'en' ? 'Rescue Plan verification' : 'बचाव योजना सत्यापन'
+                       ].map((item, i) => (
+                         <li key={i} className="flex items-center gap-3 text-slate-600 font-bold text-sm">
+                           <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                           {item}
+                         </li>
+                       ))}
+                     </ul>
+                   </div>
                  </div>
-                 <div className="space-y-4">
-                   <h4 className="text-sm font-black text-red-800 uppercase tracking-widest flex items-center gap-2">
-                     <ClipboardList size={18} />
-                     {lang === 'en' ? 'Safety Documentation' : 'सुरक्षा दस्तावेज़ीकरण'}
-                   </h4>
-                   <ul className="space-y-2 text-slate-700 font-bold">
-                     <li>• {lang === 'en' ? 'Approved JHA/Risk Assessment' : 'अनुमोदित JHA/जोखिम मूल्यांकन'}</li>
-                     <li>• {lang === 'en' ? 'Active Permit Document' : 'सक्रिय परमिट दस्तावेज़'}</li>
-                     <li>• {lang === 'en' ? 'Rescue Plan verification' : 'बचाव योजना सत्यापन'}</li>
-                   </ul>
-                 </div>
-               </div>
 
-               <div className="mt-10 flex flex-wrap gap-4 pt-8 border-t border-red-100">
-                 <button 
-                   onClick={() => window.print()}
-                   className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-red-200 hover:bg-red-700 transition-colors"
-                 >
-                   <ClipboardList size={18} />
-                   {lang === 'en' ? 'Print Work Permit' : 'कार्य परमिट प्रिंट करें'}
-                 </button>
-                 <div className="flex items-center gap-3 px-6 py-3 bg-white border border-red-100 rounded-xl text-red-900 font-bold text-xs uppercase tracking-widest">
-                   <Shield size={18} className="text-red-600" />
-                   {lang === 'en' ? 'Strict Compliance Required' : 'सख्त अनुपालन आवश्यक'}
+                 <div className="mt-12 flex flex-wrap gap-4 pt-10 border-t border-red-100">
+                   <motion.button 
+                     whileHover={{ scale: 1.05, bg: '#991b1b' }}
+                     whileTap={{ scale: 0.95 }}
+                     onClick={() => window.print()}
+                     className="flex items-center gap-3 px-8 py-4 bg-red-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest shadow-2xl shadow-red-200 transition-all"
+                   >
+                     <ClipboardList size={20} />
+                     {lang === 'en' ? 'Print Work Permit' : 'कार्य परमिट प्रिंट करें'}
+                   </motion.button>
+                   <div className="flex items-center gap-4 px-8 py-4 bg-white border-2 border-red-50 rounded-[1.5rem] text-red-900 font-black text-[10px] uppercase tracking-[0.2em] shadow-sm">
+                     <ShieldAlert size={20} className="text-red-600 animate-pulse" />
+                     {lang === 'en' ? 'Strict Compliance Required' : 'सख्त अनुपालन आवश्यक'}
+                   </div>
                  </div>
                </div>
-             </article>
+             </motion.article>
            )}
 
-           <article className="glass-card p-8 md:p-14 text-left shadow-2xl bg-white/60 relative">
-              <div className="absolute top-0 right-0 p-8 opacity-5">
-                <BookOpen size={120} />
+           <motion.article 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="glass-card p-10 md:p-14 text-left shadow-2xl bg-white/70 relative border-slate-100"
+            >
+              <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-blue-600">
+                <BookOpen size={240} />
               </div>
-              <span className="badge bg-blue-100 text-blue-800 mb-6 inline-block font-black text-[10px] tracking-widest uppercase">
-                {lang === 'en' ? 'Task Examples' : 'कार्य के उदाहरण'}
-              </span>
-              <h3 className="text-3xl md:text-4xl font-extrabold text-[#0f172a] mb-10 tracking-tighter leading-none">
-                {lang === 'en' ? 'When to use this mode' : 'इस मोड का उपयोग कब करें'}
-              </h3>
-              
-              <div className="space-y-6">
-                {(modeT.examples || []).map((ex, idx) => (
-                  <div key={idx} className="flex gap-5 items-center p-5 bg-white/40 rounded-[1.5rem] border border-white/60 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] shrink-0" aria-hidden="true" />
-                    <p className="text-lg text-slate-800 font-bold leading-tight">{ex}</p>
-                  </div>
-                ))}
+              <div className="relative z-10">
+                <span className="badge bg-blue-50 text-blue-700 border border-blue-100 mb-6 inline-block font-black text-[10px] tracking-widest uppercase">
+                  {lang === 'en' ? 'Field Context' : 'क्षेत्र संदर्भ'}
+                </span>
+                <h3 className="text-4xl font-display font-black text-[#0f172a] mb-12 tracking-tighter leading-none">
+                  {lang === 'en' ? 'Application Scenarios' : 'अनुप्रयोग परिदृश्य'}
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {(modeT.examples || []).map((ex, idx) => (
+                    <motion.div 
+                      key={idx} 
+                      whileHover={{ y: -5, borderColor: '#3b82f6' }}
+                      className="flex gap-5 items-center p-6 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all group"
+                    >
+                      <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors" aria-hidden="true">
+                        <Hand size={20} />
+                      </div>
+                      <p className="text-base md:text-lg text-slate-800 font-bold leading-tight">{ex}</p>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-           </article>
+           </motion.article>
         </div>
       </div>
 
