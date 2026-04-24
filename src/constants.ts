@@ -208,14 +208,14 @@ export const MODES: Record<number, Mode> = {
   },
   5: {
     id: 5,
-    name: ' Mode -4PERMIT TO WORK',
+    name: 'PERMIT TO WORK',
     color: '#ef4444',
     bgColor: 'rgba(239, 68, 68, 0.1)',
     borderColor: 'rgba(239, 68, 68, 0.2)',
     icon: 'ShieldAlert',
     translations: {
       en: {
-        title: 'Mode 4 Permit to Work',
+        title: 'Permit to Work',
         description: 'Mode 4 is a critical protocol for tasks where equipment must remain energized for Troubleshooting. It requires an active Permit to Work (PTW) and mandatory supervision.',
         requirements: [
           'Manage the task strictly with an active PERMIT TO WORK',
