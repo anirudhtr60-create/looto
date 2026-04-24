@@ -208,14 +208,14 @@ export const MODES: Record<number, Mode> = {
   },
   5: {
     id: 5,
-    name: 'PERMIT TO WORK',
+    name: ' Mode -4PERMIT TO WORK',
     color: '#ef4444',
     bgColor: 'rgba(239, 68, 68, 0.1)',
     borderColor: 'rgba(239, 68, 68, 0.2)',
     icon: 'ShieldAlert',
     translations: {
       en: {
-        title: 'Mode 5 Permit to Work',
+        title: 'Mode 4 Permit to Work',
         description: 'Mode 4 is a critical protocol for tasks where equipment must remain energized for Troubleshooting. It requires an active Permit to Work (PTW) and mandatory supervision.',
         requirements: [
           'Manage the task strictly with an active PERMIT TO WORK',
@@ -232,7 +232,7 @@ export const MODES: Record<number, Mode> = {
       },
       hi: {
         title: 'मोड 4 परमिट टू वर्क',
-        description: 'मोड 5 उन कार्यों के लिए एक महत्वपूर्ण प्रोटोकॉल है जहाँ उपकरण को समस्या निवारण के लिए सक्रिय रहना चाहिए। इसमें सक्रिय परमिट टू वर्क (PTW) और अनिवार्य पर्यवेक्षण की आवश्यकता होती है।',
+        description: 'मोड 4 उन कार्यों के लिए एक महत्वपूर्ण प्रोटोकॉल है जहाँ उपकरण को समस्या निवारण के लिए सक्रिय रहना चाहिए। इसमें सक्रिय परमिट टू वर्क (PTW) और अनिवार्य पर्यवेक्षण की आवश्यकता होती है।',
         requirements: [
           'सक्रिय PERMIT टू वर्क के साथ कार्य का सख्ती से प्रबंधन करें',
           'कार्य जोखिम मूल्यांकन SME द्वारा किया और प्रलेखित किया जाना चाहिए',
