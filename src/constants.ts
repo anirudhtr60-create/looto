@@ -173,7 +173,7 @@ export const MODES: Record<number, Mode> = {
     icon: 'BookOpen',
     translations: {
       en: {
-        title: 'Mode 4 Specific SOP',
+        title: 'Specific SOP',
         description: 'Mode 4 is utilized for tasks that are frequent, well-understood, and governed by a specific, validated Standard Operating Procedure (SOP).',
         requirements: [
           'STOP THE MACHINE completely before starting work',
@@ -189,7 +189,7 @@ export const MODES: Record<number, Mode> = {
         ]
       },
       hi: {
-        title: 'मोड 4 विशिष्ट SOP',
+        title: 'विशिष्ट SOP',
         description: 'मोड 4 का उपयोग उन कार्यों के लिए किया जाता है जो बार-बार होते हैं और एक विशिष्ट, मान्य मानक संचालन प्रक्रिया (SOP) द्वारा शासित होते हैं।',
         requirements: [
           'काम शुरू करने से पहले मशीन को पूरी तरह से रोकें',
