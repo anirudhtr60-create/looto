@@ -1376,6 +1376,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
           </div>
         )}
       </AnimatePresence>
+
       <div 
         ref={printRef}
         className="print-root"
