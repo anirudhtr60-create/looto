@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, MouseEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, ArrowLeft, Save, Printer, CheckCircle2, AlertCircle, Info, Check, Download, FileText, ChevronDown, Trash2, FolderOpen, X, Clock, Frown, Meh, Smile } from 'lucide-react';
+import { Shield, ArrowLeft, Save, Printer, CheckCircle2, AlertCircle, Info, Check, Download, FileText, ChevronDown, Trash2, FolderOpen, X, Clock, Frown, Meh, Smile, Star } from 'lucide-react';
 import { Language } from '../types';
 import { safeStorage } from '../lib/storage';
 import jsPDF from 'jspdf';
@@ -34,6 +34,46 @@ const RATING_CONFIG: Record<number, { label: string; color: string; bgColor: str
   3: { label: 'Average', color: '#eab308', bgColor: 'bg-yellow-50', textColor: 'text-yellow-500', icon: Meh },
   4: { label: 'Good', color: '#84cc16', bgColor: 'bg-lime-50', textColor: 'text-lime-500', icon: Smile },
   5: { label: 'Very Good', color: '#22c55e', bgColor: 'bg-green-50', textColor: 'text-green-500', icon: Smile }
+};
+
+interface RatingSelectorProps {
+  value: number | '';
+  onChange: (val: number) => void;
+  size?: 'sm' | 'md';
+  hasError?: boolean;
+}
+
+const RatingSelector = ({ value, onChange, size = 'sm', hasError = false }: RatingSelectorProps) => {
+  const [hovered, setHovered] = useState<number | null>(null);
+
+  return (
+    <div className={`flex items-center gap-1 p-1 rounded-lg transition-all ${hasError ? 'bg-red-50 ring-2 ring-red-200' : ''}`}>
+      {[1, 2, 3, 4, 5].map((v) => {
+        const isActive = (hovered !== null ? v <= hovered : (value !== '' && v <= value));
+        return (
+          <motion.button
+            key={v}
+            whileHover={{ scale: 1.2 }}
+            whileTap={{ scale: 0.9 }}
+            onMouseEnter={() => setHovered(v)}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => onChange(v)}
+            className={`transition-colors ${size === 'sm' ? 'p-1' : 'p-2'}`}
+          >
+            <Star
+              size={size === 'sm' ? 14 : 24}
+              className={isActive ? 'fill-yellow-400 text-yellow-400' : hasError ? 'text-red-200 fill-transparent' : 'text-slate-200 fill-transparent'}
+            />
+          </motion.button>
+        );
+      })}
+      {value !== '' && (
+        <span className={`ml-2 text-[9px] font-black uppercase tracking-widest ${RATING_CONFIG[value].textColor}`}>
+          {RATING_CONFIG[value].label}
+        </span>
+      )}
+    </div>
+  );
 };
 
 export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluationProps) {
@@ -96,6 +136,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
 
   const [showSaveMessage, setShowSaveMessage] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -137,7 +178,23 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
       return sortOrder === 'desc' ? -comparison : comparison;
     });
 
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    if (!formData.contractCompany.trim()) {
+      errors.contractCompany = 'Company name is required';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSave = () => {
+    if (!validateForm()) {
+      setSaveError('Please provide at least the Contractor Company Name to save');
+      setTimeout(() => setSaveError(null), 5000);
+      return;
+    }
+
     const evaluationData = {
       formData,
       safetyMetrics,
@@ -146,10 +203,11 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
       timestamp: Date.now()
     };
     
-    const companyName = formData.contractCompany.trim() || `Draft_${new Date().getTime()}`;
+    const companyName = formData.contractCompany.trim();
     const saved = safeStorage.set(`contractor_eval_${companyName.replace(/\s+/g, '_')}`, evaluationData);
     if (saved) {
       setSaveError(null);
+      setValidationErrors({});
       setShowSaveMessage(true);
       loadSavedAssessments();
       setTimeout(() => setShowSaveMessage(false), 3000);
@@ -183,6 +241,13 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
   };
 
   const updateSafetyMetric = (id: number, field: keyof EvaluationRow, value: any) => {
+    if (field === 'rating') {
+      setValidationErrors(prev => {
+        const next = { ...prev };
+        delete next[`safety_${id}`];
+        return next;
+      });
+    }
     setSafetyMetrics(prev => prev.map(m => {
       if (m.id === id) {
         const update = { ...m, [field]: value };
@@ -197,6 +262,13 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
   };
 
   const updateCompetenceMetric = (id: number, field: keyof EvaluationRow, value: any) => {
+    if (field === 'rating') {
+      setValidationErrors(prev => {
+        const next = { ...prev };
+        delete next[`competence_${id}`];
+        return next;
+      });
+    }
     setCompetenceMetrics(prev => prev.map(m => {
       if (m.id === id) {
         const update = { ...m, [field]: value };
@@ -213,6 +285,12 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
   const handleDownload = async (format: 'pdf' | 'doc') => {
     setShowDownloadMenu(false);
     
+    if (!validateForm()) {
+      setSaveError('Please provide a Contractor Company Name before downloading');
+      setTimeout(() => setSaveError(null), 5000);
+      return;
+    }
+
     if (format === 'pdf') {
       try {
         const docDefinition: any = {
@@ -809,11 +887,15 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   <div className="flex-1 px-4 py-2">
                     <input 
                       type="text" 
-                      className="w-full bg-slate-50/50 border border-slate-100 rounded-lg px-3 py-1.5 text-[11px] font-bold focus:border-blue-500 focus:bg-white outline-none transition-all"
-                      placeholder="Enter company name..."
+                      className={`w-full bg-slate-50/50 border ${validationErrors.contractCompany ? 'border-red-500 bg-red-50/30' : 'border-slate-100'} rounded-lg px-3 py-1.5 text-[11px] font-bold focus:border-blue-500 focus:bg-white outline-none transition-all`}
+                      placeholder="Enter company name... *"
                       value={formData.contractCompany}
-                      onChange={e => setFormData({...formData, contractCompany: e.target.value})}
+                      onChange={e => {
+                        setFormData({...formData, contractCompany: e.target.value});
+                        if (validationErrors.contractCompany) setValidationErrors(prev => ({ ...prev, contractCompany: '' }));
+                      }}
                     />
+                    {validationErrors.contractCompany && <span className="text-[9px] text-red-500 font-bold ml-1">{validationErrors.contractCompany}</span>}
                   </div>
                 </div>
 
@@ -825,11 +907,15 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                   </div>
                   <div className="flex-1 px-4 py-2">
                     <textarea 
-                      className="w-full h-20 bg-slate-50/50 border border-slate-100 rounded-lg px-3 py-1.5 text-[11px] font-bold focus:border-blue-500 focus:bg-white outline-none transition-all resize-none"
+                      className={`w-full h-20 bg-slate-50/50 border ${validationErrors.workDescription ? 'border-red-500 bg-red-50/30' : 'border-slate-100'} rounded-lg px-3 py-1.5 text-[11px] font-bold focus:border-blue-500 focus:bg-white outline-none transition-all resize-none`}
                       placeholder="Enter description..."
                       value={formData.workDescription}
-                      onChange={e => setFormData({...formData, workDescription: e.target.value})}
+                      onChange={e => {
+                        setFormData({...formData, workDescription: e.target.value});
+                        if (validationErrors.workDescription) setValidationErrors(prev => ({ ...prev, workDescription: '' }));
+                      }}
                     />
+                    {validationErrors.workDescription && <span className="text-[9px] text-red-500 font-bold ml-1">{validationErrors.workDescription}</span>}
                   </div>
                 </div>
 
@@ -906,19 +992,11 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                             </div>
                           </td>
                           <td className="px-6 py-5 border-r-2 border-slate-100">
-                            <div className="flex items-center justify-center gap-1">
-                              {[1, 2, 3, 4, 5].map(v => (
-                                <button
-                                  key={v}
-                                  onClick={() => updateSafetyMetric(row.id, 'rating', v)}
-                                  className={`w-7 h-7 rounded-lg text-[10px] font-black transition-all flex items-center justify-center ${
-                                    row.rating === v 
-                                      ? 'bg-slate-900 text-white shadow-md scale-110' 
-                                      : 'bg-slate-50 text-slate-400 hover:bg-slate-200'
-                                  }`}
-                                >{v}</button>
-                              ))}
-                            </div>
+                            <RatingSelector 
+                              value={row.rating}
+                              onChange={(v) => updateSafetyMetric(row.id, 'rating', v)}
+                              hasError={!!validationErrors[`safety_${row.id}`]}
+                            />
                           </td>
                           <td className="px-6 py-5">
                             <input 
@@ -973,19 +1051,11 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                             </div>
                           </td>
                           <td className="px-6 py-5 border-r-2 border-slate-100">
-                            <div className="flex items-center justify-center gap-1">
-                              {[1, 2, 3, 4, 5].map(v => (
-                                <button
-                                  key={v}
-                                  onClick={() => updateCompetenceMetric(row.id, 'rating', v)}
-                                  className={`w-7 h-7 rounded-lg text-[10px] font-black transition-all flex items-center justify-center ${
-                                    row.rating === v 
-                                      ? 'bg-slate-900 text-white shadow-md scale-110' 
-                                      : 'bg-slate-50 text-slate-400 hover:bg-slate-200'
-                                  }`}
-                                >{v}</button>
-                              ))}
-                            </div>
+                            <RatingSelector 
+                              value={row.rating}
+                              onChange={(v) => updateCompetenceMetric(row.id, 'rating', v)}
+                              hasError={!!validationErrors[`competence_${row.id}`]}
+                            />
                           </td>
                           <td className="px-6 py-5">
                             <input 
@@ -1037,9 +1107,12 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                     <input 
                       type="text"
                       placeholder="Safety Manager Name"
-                      className="w-full text-center text-sm font-black uppercase tracking-widest text-slate-900 bg-transparent outline-none border-b-2 border-transparent focus:border-blue-500 py-2 transition-all"
+                      className={`w-full text-center text-sm font-black uppercase tracking-widest text-slate-900 bg-transparent outline-none border-b-2 ${validationErrors.safetyManager ? 'border-red-500' : 'border-transparent focus:border-blue-500'} py-2 transition-all`}
                       value={formData.safetyManager || ''}
-                      onChange={e => setFormData({...formData, safetyManager: e.target.value})}
+                      onChange={e => {
+                        setFormData({...formData, safetyManager: e.target.value});
+                        if (validationErrors.safetyManager) setValidationErrors(prev => ({ ...prev, safetyManager: '' }));
+                      }}
                     />
                     <p className="text-[10px] font-black text-center text-slate-400 tracking-widest uppercase">Safety Manager Signature & Title</p>
                   </div>
@@ -1048,9 +1121,12 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
                     <input 
                       type="text"
                       placeholder="Dept. Incharge Name"
-                      className="w-full text-center text-sm font-black uppercase tracking-widest text-slate-900 bg-transparent outline-none border-b-2 border-transparent focus:border-blue-500 py-2 transition-all"
+                      className={`w-full text-center text-sm font-black uppercase tracking-widest text-slate-900 bg-transparent outline-none border-b-2 ${validationErrors.deptInCharge ? 'border-red-500' : 'border-transparent focus:border-blue-500'} py-2 transition-all`}
                       value={formData.deptInCharge || ''}
-                      onChange={e => setFormData({...formData, deptInCharge: e.target.value})}
+                      onChange={e => {
+                        setFormData({...formData, deptInCharge: e.target.value});
+                        if (validationErrors.deptInCharge) setValidationErrors(prev => ({ ...prev, deptInCharge: '' }));
+                      }}
                     />
                     <p className="text-[10px] font-black text-center text-slate-400 tracking-widest uppercase">Department Incharge Signature & Title</p>
                   </div>
