@@ -21,6 +21,7 @@ import Tooltip from './components/Tooltip';
 import Portal from './components/Portal';
 import VehicleInspection from './components/VehicleInspection';
 import ContractorEvaluation from './components/ContractorEvaluation';
+import Login from './components/Login';
 
 type View = 'decision' | 'reference' | 'history';
 type Project = 'portal' | 'loto' | 'vehicle' | 'permits' | 'sop' | 'contractor';
@@ -33,6 +34,8 @@ export default function App() {
   const [storageError, setStorageError] = useState<string | null>(null);
   const [lang, setLang] = useState<Language>('en');
   const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showLoginFor, setShowLoginFor] = useState<Project | null>(null);
 
   const isDark = false;
 
@@ -149,33 +152,46 @@ export default function App() {
 
   const t = UI_TRANSLATIONS[lang];
 
-  if (project === 'portal') {
-    return <Portal lang={lang} onSelectProject={(p) => setProject(p as Project)} />;
-  }
-
-  if (project === 'vehicle') {
-    return <VehicleInspection lang={lang} onBack={() => setProject('portal')} />;
-  }
-
-  if (project === 'contractor') {
-    return <ContractorEvaluation lang={lang} onBack={() => setProject('portal')} />;
-  }
-
   return (
     <div className="min-h-screen flex flex-col font-sans transition-colors duration-300 bg-slate-50 relative overflow-hidden">
+      <AnimatePresence>
+        {showLoginFor && (
+          <Login 
+            lang={lang}
+            onLogin={() => {
+              setIsAuthenticated(true);
+              setProject(showLoginFor);
+              setShowLoginFor(null);
+            }}
+            onCancel={() => setShowLoginFor(null)}
+          />
+        )}
+      </AnimatePresence>
+
       <a href="#main-content" className="skip-link">
         {lang === 'en' ? 'Skip to content' : 'सामग्री पर जाएँ'}
       </a>
 
-      {/* Decorative Background Elements */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-blue-100/50 rounded-full blur-[120px] animate-pulse-slow" />
-        <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-green-100/50 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-grid opacity-[0.03]" />
-      </div>
+      {project === 'portal' ? (
+        <Portal lang={lang} onSelectProject={(p) => {
+          const proj = p as Project;
+          if (!isAuthenticated && (proj === 'loto' || proj === 'contractor')) {
+            setShowLoginFor(proj);
+          } else {
+            setProject(proj);
+          }
+        }} />
+      ) : (
+        <>
+          {/* Decorative Background Elements */}
+          <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+            <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-blue-100/50 rounded-full blur-[120px] animate-pulse-slow" />
+            <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-green-100/50 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '2s' }} />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-grid opacity-[0.03]" />
+          </div>
 
-      {/* Navigation Header */}
-      <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-2xl border-b border-slate-100 shadow-sm relative">
+          {/* Navigation Header */}
+          <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-2xl border-b border-slate-100 shadow-sm relative">
         <div className="max-w-7xl mx-auto px-6 h-auto md:h-24 flex flex-col md:flex-row items-center justify-between gap-6 py-4 md:py-0">
           <div className="flex items-center gap-4 self-start md:self-auto">
             <button 
@@ -309,7 +325,25 @@ export default function App() {
         </AnimatePresence>
 
         <AnimatePresence mode="wait">
-          {activeTab === 'decision' ? (
+          {project === 'vehicle' ? (
+            <motion.div
+              key="vehicle-view"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <VehicleInspection lang={lang} onBack={() => setProject('portal')} />
+            </motion.div>
+          ) : project === 'contractor' ? (
+            <motion.div
+              key="contractor-view"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <ContractorEvaluation lang={lang} onBack={() => setProject('portal')} />
+            </motion.div>
+          ) : activeTab === 'decision' ? (
             <motion.div
               key="decision-view"
               id="panel-decision"
@@ -389,6 +423,8 @@ export default function App() {
       <footer className="py-8 text-center text-slate-700 text-[10px] font-black uppercase tracking-widest border-t border-slate-200 bg-white/30">
         {lang === 'en' ? 'Based on Appendix A — LOTO Decision Tree' : 'Appendix A के आधार पर — लोटो निर्णय वृक्ष'} • {t.aboutApp}
       </footer>
+        </>
+      )}
     </div>
   );
 }

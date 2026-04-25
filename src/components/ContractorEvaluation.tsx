@@ -95,6 +95,7 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
   ]);
 
   const [showSaveMessage, setShowSaveMessage] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -148,9 +149,13 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
     const companyName = formData.contractCompany.trim() || `Draft_${new Date().getTime()}`;
     const saved = safeStorage.set(`contractor_eval_${companyName.replace(/\s+/g, '_')}`, evaluationData);
     if (saved) {
+      setSaveError(null);
       setShowSaveMessage(true);
       loadSavedAssessments();
       setTimeout(() => setShowSaveMessage(false), 3000);
+    } else {
+      setSaveError('Failed to save assessment. Please try again or check storage.');
+      setTimeout(() => setSaveError(null), 5000);
     }
   };
 
@@ -1545,6 +1550,29 @@ export default function ContractorEvaluation({ lang, onBack }: ContractorEvaluat
           </div>
         </div>
       </div>
+      {/* Error Notification */}
+      <AnimatePresence>
+        {saveError && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 50, x: '-50%' }}
+            className="fixed bottom-10 left-1/2 z-[100] px-6 py-4 bg-red-600 text-white rounded-2xl shadow-2xl flex items-center gap-3 min-w-[320px]"
+          >
+            <AlertCircle size={20} className="shrink-0" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none mb-1">Save Failed</span>
+              <p className="text-xs font-bold">{saveError}</p>
+            </div>
+            <button 
+              onClick={() => setSaveError(null)}
+              className="ml-auto p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

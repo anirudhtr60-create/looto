@@ -143,7 +143,7 @@ export default function ResultScreen({ assessment, onRestart, onBack, onExit, la
                   {lang === 'en' ? 'Protocol Issued' : 'प्रोटोकॉल जारी'}
                 </motion.span>
                 <h2 id="result-title" className="text-4xl md:text-6xl font-display font-black text-[#0f172a] tracking-tighter leading-none mb-4">
-                  <span className="opacity-20">{lang === 'en' ? 'Mode' : 'मोड'} {resultMode.id}:</span> {resultMode.name}
+                  <span className="opacity-20">{lang === 'en' ? 'Mode' : 'मोड'} {resultMode.id === 5 ? '4' : resultMode.id === 4 ? '4 (SOP)' : resultMode.id}:</span> {resultMode.name}
                 </h2>
                 <motion.p 
                   initial={{ opacity: 0 }}
@@ -224,7 +224,7 @@ export default function ResultScreen({ assessment, onRestart, onBack, onExit, la
                     <div className="w-4 h-4 rounded-full shadow-lg" style={{ backgroundColor: mode.color }} aria-hidden="true" />
                     <div className="flex flex-col">
                         <span className={`text-xs font-black tracking-widest uppercase ${isActive ? 'text-[#0f172a]' : 'text-slate-500'}`}>
-                          {lang === 'en' ? `Mode ${id}` : `मोड ${id}`}
+                          {lang === 'en' ? `Mode ${id === 5 ? '4' : id === 4 ? '4 (SOP)' : id}` : `मोड ${id === 5 ? '4' : id === 4 ? '4 (SOP)' : id}`}
                         </span>
                         {isActive && (
                           <span className="text-[9px] text-[#16a34a] font-black uppercase tracking-tighter mt-1">

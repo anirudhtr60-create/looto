@@ -147,7 +147,7 @@ export default function ModeReference({ lang, onBack, isLoading }: ModeReference
                       </div>
                     </div>
                     <h2 id={`mode-title-${id}`} className="text-2xl md:text-3xl font-display font-black tracking-tighter text-[#0f172a]">
-                      <span className="opacity-20">{lang === 'en' ? 'Mode' : 'मोड'} {id}:</span> {modeT.title}
+                      <span className="opacity-20">{lang === 'en' ? 'Mode' : 'मोड'} {id === 5 ? '4' : id === 4 ? '4 (SOP)' : id}:</span> {modeT.title}
                     </h2>
                   </div>
                 </div>

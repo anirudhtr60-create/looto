@@ -166,15 +166,15 @@ export const MODES: Record<number, Mode> = {
   },
   4: {
     id: 4,
-    name: 'SPECIFIC SOP',
+    name: 'SOP CONTROL',
     color: '#eab308',
     bgColor: 'rgba(234, 179, 8, 0.1)',
     borderColor: 'rgba(234, 179, 8, 0.2)',
     icon: 'BookOpen',
     translations: {
       en: {
-        title: 'Specific SOP',
-        description: 'Mode 4 is utilized for tasks that are frequent, well-understood, and governed by a specific, validated Standard Operating Procedure (SOP).',
+        title: 'Specific SOP Control',
+        description: 'This mode is utilized for tasks that are frequent, well-understood, and governed by a specific, validated Standard Operating Procedure (SOP).',
         requirements: [
           'STOP THE MACHINE completely before starting work',
           'Apply FULL LOTO procedures as per context',
@@ -189,7 +189,7 @@ export const MODES: Record<number, Mode> = {
         ]
       },
       hi: {
-        title: 'विशिष्ट SOP',
+        title: 'मोड 4 विशिष्ट SOP',
         description: 'मोड 4 का उपयोग उन कार्यों के लिए किया जाता है जो बार-बार होते हैं और एक विशिष्ट, मान्य मानक संचालन प्रक्रिया (SOP) द्वारा शासित होते हैं।',
         requirements: [
           'काम शुरू करने से पहले मशीन को पूरी तरह से रोकें',
@@ -215,8 +215,8 @@ export const MODES: Record<number, Mode> = {
     icon: 'ShieldAlert',
     translations: {
       en: {
-        title: 'Permit to Work',
-        description: 'Mode 4 is a critical protocol for tasks where equipment must remain energized for Troubleshooting. It requires an active Permit to Work (PTW) and mandatory supervision.',
+        title: 'Mode 4 Permit to Work',
+        description: 'This is a critical protocol for tasks where equipment must remain energized for Troubleshooting. It requires an active Permit to Work (PTW) and mandatory supervision.',
         requirements: [
           'Manage the task strictly with an active PERMIT TO WORK',
           'Task risk assessment must be performed and documented by SME',
@@ -232,7 +232,7 @@ export const MODES: Record<number, Mode> = {
       },
       hi: {
         title: 'मोड 4 परमिट टू वर्क',
-        description: 'मोड 4 उन कार्यों के लिए एक महत्वपूर्ण प्रोटोकॉल है जहाँ उपकरण को समस्या निवारण के लिए सक्रिय रहना चाहिए। इसमें सक्रिय परमिट टू वर्क (PTW) और अनिवार्य पर्यवेक्षण की आवश्यकता होती है।',
+        description: 'यह उन कार्यों के लिए एक महत्वपूर्ण प्रोटोकॉल है जहाँ उपकरण को समस्या निवारण के लिए सक्रिय रहना चाहिए। इसमें सक्रिय परमिट टू वर्क (PTW) और अनिवार्य पर्यवेक्षण की आवश्यकता होती है।',
         requirements: [
           'सक्रिय PERMIT टू वर्क के साथ कार्य का सख्ती से प्रबंधन करें',
           'कार्य जोखिम मूल्यांकन SME द्वारा किया और प्रलेखित किया जाना चाहिए',

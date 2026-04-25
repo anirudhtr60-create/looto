@@ -74,10 +74,11 @@ export default function HistoryView({ history, lang, onClear, onBack, onViewDeta
           const rows = history.map(rec => {
             const pathStr = rec.path?.map(p => `${p.questionId}:${p.answer ? 'YES' : 'NO'}`).join(' | ') || '';
             const mode = MODES[rec.result];
+            const modeName = mode ? (mode.id === 5 ? 'Mode 4' : mode.id === 4 ? 'Mode 4 (SOP)' : mode.name) : `Mode ${rec.result}`;
             return [
               `"${rec.activity.replace(/"/g, '""')}"`,
               new Date(rec.timestamp).toISOString(),
-              mode ? mode.name : `Mode ${rec.result}`,
+              modeName,
               rec.language,
               `"${pathStr}"`
             ];
@@ -218,7 +219,7 @@ export default function HistoryView({ history, lang, onClear, onBack, onViewDeta
                         {new Date(record.timestamp).toLocaleString(lang === 'en' ? 'en-US' : 'hi-IN')}
                       </span>
                       <span className="px-3 py-1 rounded-lg bg-slate-100 text-[#0f172a] shadow-sm flex items-center gap-2">
-                        <span className="text-blue-600 font-black">Mode {record.result}</span>
+                        <span className="text-blue-600 font-black">Mode {record.result === 5 ? '4' : record.result === 4 ? '4 (SOP)' : record.result}</span>
                         <span className="w-[1px] h-3 bg-slate-300" />
                         {modeT.title}
                       </span>
